@@ -53,6 +53,9 @@ async function imageryFixture(page) {
       },
     }),
   );
+  await page.route('**/api/poi?**', (route) =>
+    route.fulfill({ json: { description: '上海市黄浦区南京东路；外滩街道；和平饭店' } }),
+  );
   await page.route(
     /https:\/\/(server\.arcgisonline\.com|wayback\.maptiles\.arcgis\.com)\/(?:.*\/)?(tile|tiles)\//,
     (route) =>
@@ -63,25 +66,22 @@ async function imageryFixture(page) {
   );
 }
 
-test('latest capture, independent history, compare and real ZIP download', async ({ page }) => {
+test('region card loads POI then retrieves the closest historical image for a time point', async ({ page }) => {
   await imageryFixture(page);
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'TerraChron' })).toBeVisible();
   await page.getByRole('button', { name: '截取并加入区域库' }).click();
-  await expect(page.getByTestId('latest-preview')).toBeVisible();
-  await page.getByLabel('开始日期').fill('2020-01-01');
-  await page.getByLabel('结束日期').fill('2020-12-31');
-  await page.getByRole('button', { name: '获取历史图像', exact: true }).click();
-  await page.getByRole('button', { name: '查看历史影像' }).click();
-  await expect(page.getByRole('dialog', { name: '历史影像列表' })).toBeVisible();
-  await expect(page.getByTestId('history-dialog')).toBeVisible();
-  await expect(page.getByTestId('observation-card')).toHaveCount(1);
-  await expect(page.getByTestId('observation-card')).toContainText('2020-06-01');
-  await expect(page.getByTestId('observation-card')).toContainText('2025-01-01');
+  await expect(page.getByTestId('poi-description')).toContainText('和平饭店');
+  await expect(page.getByTestId('history-preview')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /获取历史图像/ })).toBeDisabled();
+  await page.getByLabel('目标年份').selectOption('2020');
+  await page.getByRole('button', { name: /获取历史图像/ }).click();
+  await expect(page.getByTestId('history-preview')).toBeVisible();
+  await expect(page.getByTestId('history-preview')).toContainText('2020-06-01');
   await expect(page.getByTestId('main-map')).toHaveAttribute('data-basemap', 'esri-current');
-  await page.getByRole('button', { name: '比对', exact: true }).click();
+  await page.getByRole('button', { name: '比对影像', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '影像时序比对' })).toBeVisible();
   await page.getByRole('button', { name: '卷帘比对' }).click();
   await expect(page.getByLabel('卷帘位置')).toBeVisible();
@@ -92,9 +92,6 @@ test('latest capture, independent history, compare and real ZIP download', async
   await page.mouse.up();
   expect(Number(await page.getByLabel('卷帘位置').inputValue())).toBeGreaterThan(55);
   await page.getByRole('button', { name: '关闭比对' }).click();
-  await page.getByRole('button', { name: '查看历史影像' }).click();
-  await page.getByRole('checkbox', { name: '选择此历史影像用于输出' }).check();
-  await page.getByRole('button', { name: '关闭历史影像' }).click();
   await page.getByRole('button', { name: '数据输出' }).click();
   const downloaded = page.waitForEvent('download');
   await page.getByRole('button', { name: '下载影像数据包' }).click();

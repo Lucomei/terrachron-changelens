@@ -1,4 +1,5 @@
 import { mapConcurrent } from './network.js';
+import { findClosestObservation, normalizeTimePoint } from '../domain/timepoint.js';
 
 export function validateRange({ startDate, endDate }) {
   const valid = (date) =>
@@ -9,13 +10,7 @@ export function validateRange({ startDate, endDate }) {
     throw new Error('请选择有效日期，开始日期不能晚于结束日期');
 }
 
-export async function searchHistory(
-  region,
-  range,
-  provider,
-  { signal, onProgress = () => {} } = {},
-) {
-  validateRange(range);
+async function collectHistory(region, provider, { signal, onProgress = () => {} } = {}) {
   signal?.throwIfAborted();
   onProgress({ stage: '正在发现区域历史版本', done: 0, total: 0 });
   const releases = await provider.discover(region, { signal, onProgress });
@@ -42,21 +37,46 @@ export async function searchHistory(
         providerId: provider.id,
         capturedAt: dates.length === 1 ? dates[0] : null,
         capturedDates: dates,
-        partialDateMatch: dates.some((date) => date < range.startDate || date > range.endDate),
+        partialDateMatch: false,
         metadata,
-        queryRange: { ...range },
       };
     },
     signal,
   );
-  const observations = records.filter((record) =>
-    record.capturedDates.some((date) => date >= range.startDate && date <= range.endDate),
-  );
+  return { records, warnings, scanned: releases.length };
+}
+
+export async function searchHistory(region, range, provider, options = {}) {
+  validateRange(range);
+  const { records, warnings, scanned } = await collectHistory(region, provider, options);
+  const observations = records
+    .filter((record) => record.capturedDates.some((date) => date >= range.startDate && date <= range.endDate))
+    .map((record) => ({
+      ...record,
+      partialDateMatch: record.capturedDates.some(
+        (date) => date < range.startDate || date > range.endDate,
+      ),
+      queryRange: { ...range },
+    }));
   observations.sort((a, b) => b.capturedDates.at(-1).localeCompare(a.capturedDates.at(-1)));
   return {
     observations,
     unknown: records.filter((record) => !record.capturedDates.length),
     warnings,
-    scanned: releases.length,
+    scanned,
+  };
+}
+
+export async function searchClosestHistory(region, timePoint, provider, options = {}) {
+  const target = normalizeTimePoint(timePoint);
+  const { records, warnings, scanned } = await collectHistory(region, provider, options);
+  const closest = findClosestObservation(records, timePoint);
+  return {
+    observations: closest.observation ? [closest.observation] : [],
+    unknown: records.filter((record) => !record.capturedDates.length),
+    warnings,
+    scanned,
+    closest,
+    target,
   };
 }

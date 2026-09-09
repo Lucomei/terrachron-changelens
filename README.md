@@ -20,10 +20,10 @@ npm run dev
 
 1. 输入 WGS84 经纬度，或点击“地图选点”后点击地图。
 2. 点击“截取并加入区域库”，得到 256 m × 256 m 地面区域的 512 × 512 PNG。该像素数不代表源影像的真实分辨率。
-3. 在区域库选择目标；每个区域有独立颜色、时间范围和历史状态。
-4. 调整开始/结束日期或时间轴，点击“获取历史图像”，再点击“查看历史影像”打开可拉伸的分页浮窗（每页最多 5 条）。有明确拍摄日期的匹配结果与日期未知记录分开显示。
-5. 使用“比对”打开分栏或卷帘窗口；拖动分界线或使用下面的滑条。
-6. 勾选需要输出的历史图卡，点击“数据输出”，选择区域后下载 ZIP，或填写自己的 HTTP 接收地址并发送。
+3. 区域库会在后台保存最新截取，并在卡片内显示高德 POI 描述；长描述会省略，悬停可查看全文。
+4. 在同一张区域卡片选择年份（必填）；月份和日期可选，且选择日期前必须先选择月份。点击“获取历史图像”后，卡片显示实际拍摄日期最接近该时间点的一张历史影像。
+5. 使用“比对影像”打开分栏或卷帘窗口；拖动分界线或使用下面的滑条。
+6. 点击“数据输出”，选择区域后下载 ZIP，或填写自己的 HTTP 接收地址并发送。
 
 主地图始终为提供方当前版本；所有区域截取都来自 Esri 当前卫星影像，即使地图切到 OSM 街道定位。历史查询、历史预览及比对不改变主底图或覆盖当前截取。
 
@@ -43,6 +43,18 @@ Wayback 记录的是底图版本档案，并非卫星每次过境的完整原始
 
 外部服务必须可联网访问。请求失败会显示错误，可重试或取消；生产代码没有模拟历史影像回退。测试中的影像 fixture 仅用于可重复的自动化验证。
 
+## 高德 POI Key
+
+高德 Key 只供 Vercel 的 `/api/poi` 服务端函数使用，绝不能使用 `VITE_` 前缀，也不要填入 `.env` 后提交。部署后在 Vercel 项目的 **Settings → Environment Variables** 新建：
+
+```text
+Name:  AMAP_API_KEY
+Value: 你的高德 Web 服务 API Key
+Environments: Production、Preview、Development
+```
+
+保存后到 **Deployments** 对最新部署执行 **Redeploy**。本地需要经 Vercel Functions 调试时，使用 `vercel dev` 并在本机环境中设置同名变量；`npm run dev` 只启动 Vite 页面，不会启动 `/api/poi`。
+
 ## 对外接口
 
 宿主页面可调用 `window.terrachron`，其他 Vue 项目可以导入 `createTerraChronApi(pinia)`。详细参数、返回值及接收端示例见 [docs/api.md](docs/api.md)。
@@ -57,14 +69,16 @@ ZIP 包含 `manifest.json` 和实际 PNG 文件；POST 使用 `multipart/form-da
 src/
   components/           地图、采样、区域库、历史、比对与传递界面
   composables/          拖拽生命周期
-  domain/geometry.js    地面区域、投影、瓦片覆盖
+  domain/               地面区域、投影、瓦片覆盖、时间点匹配
   stores/workspace.js   按区域隔离的状态、取消与结果归属
   services/
     providers/esri.js   真实 Esri 目录、区域变化和拍摄元数据
-    history.js          日期筛选与查询进度
+    history.js          时间点最近影像查询与进度
+    poi.js              同源 POI 服务调用
     imagery.js          最新或历史瓦片到实际区域 PNG
     transfer.js         元数据清单、ZIP 和 HTTP 文件传递
   api.js                界面和外部调用共用的公开接口
+api/poi.js              Vercel 服务端高德坐标转换与逆地理编码
 ```
 
 ## 验证

@@ -4,7 +4,6 @@ import { useWorkspace } from './stores/workspace.js';
 const MapCanvas = defineAsyncComponent(() => import('./components/MapCanvas.vue'));
 import CapturePanel from './components/CapturePanel.vue';
 import RegionPanel from './components/RegionPanel.vue';
-import HistoryPanel from './components/HistoryPanel.vue';
 const CompareDialog = defineAsyncComponent(() => import('./components/CompareDialog.vue'));
 const TransferDialog = defineAsyncComponent(() => import('./components/TransferDialog.vue'));
 const iconUrl = `${import.meta.env.BASE_URL}favicon.svg`;
@@ -49,10 +48,7 @@ const observation = computed(
         街道定位</button
       ><span class="basemap-note">提供方当前版本</span>
     </div>
-    <main class="workspace-panels">
-      <div class="left-panels"><CapturePanel /><RegionPanel /></div>
-      <HistoryPanel @compare="comparison = $event" />
-    </main>
+    <main class="workspace-panels"><div class="left-panels"><CapturePanel /><RegionPanel @compare="comparison = $event" /></div></main>
     <div class="map-caption">
       <span class="crosshair-mark">＋</span>
       <div>在空间中选取<span>在时间中探索</span></div>

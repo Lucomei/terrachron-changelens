@@ -38,14 +38,14 @@ test('deleting or canceling a region prevents stale results from being applied',
   assert.equal(store.activeId, null);
 });
 
-test('ranges and colors are independently owned by each region', () => {
+test('time points and colors are independently owned by each region', () => {
   setActivePinia(createPinia());
   const store = useWorkspace();
   const a = store.addRegion([0, 0]);
   const b = store.addRegion([10, 20]);
-  a.range.startDate = '2001-01-01';
+  a.timePoint.year = '2001';
   assert.notEqual(a.color, b.color);
-  assert.notEqual(a.range.startDate, b.range.startDate);
+  assert.notEqual(a.timePoint.year, b.timePoint.year);
 });
 
 test('region colors remain distinct after the initial palette is exhausted', () => {
@@ -53,4 +53,15 @@ test('region colors remain distinct after the initial palette is exhausted', () 
   const store = useWorkspace();
   for (let i = 0; i < 15; i++) store.addRegion([i, 30]);
   assert.equal(new Set(store.regions.map((r) => r.color)).size, 15);
+});
+
+test('POI state and selected time point are isolated by region', () => {
+  setActivePinia(createPinia());
+  const store = useWorkspace();
+  const a = store.addRegion([116.39, 39.9]);
+  const b = store.addRegion([121.47, 31.23]);
+  a.poi.description = '天安门';
+  a.timePoint.year = '2020';
+  assert.equal(b.poi.description, '');
+  assert.equal(b.timePoint.year, '');
 });

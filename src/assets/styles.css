@@ -462,6 +462,29 @@ img {
   flex-shrink: 0;
   object-fit: cover;
 }
+.region-select > .history-thumb {
+  width: 57px;
+  height: 57px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  background: #0d1e2f;
+}
+.history-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.history-thumb small {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 2px 3px;
+  color: #d9e9f8;
+  background: #061629c7;
+  font-size: 7px;
+  text-align: center;
+}
 .thumb-placeholder {
   background: linear-gradient(135deg, #203646, #0d1e2f);
   font-size: 10px;
@@ -528,6 +551,65 @@ img {
   background: transparent;
   color: var(--blue);
   padding: 6px 0;
+}
+.region-card {
+  padding-bottom: 9px;
+}
+.poi-row {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 1px 9px 8px;
+  color: #8da3bc;
+  font-size: 9px;
+}
+.poi-row > span {
+  flex-shrink: 0;
+  color: #6f8ba8;
+}
+.poi-row p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.timepoint-row {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: 5px;
+  padding: 0 9px 8px;
+}
+.timepoint-row label {
+  font-size: 9px;
+  color: #8da3bc;
+}
+.timepoint-row select {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 4px;
+  color: #c7d8ea;
+  border: 1px solid #355677;
+  border-radius: 4px;
+  background: #10243a;
+  font-size: 9px;
+}
+.history-card-action {
+  display: flex;
+  gap: 6px;
+  padding: 0 9px;
+}
+.history-card-action .primary,
+.history-card-action .secondary {
+  flex: 1;
+  padding: 8px 7px;
+  font-size: 10px;
+}
+.history-card-action .compare-button {
+  flex: 0 0 auto;
+}
+.timepoint-note,
+.region-card .query-progress {
+  padding: 6px 9px 0;
 }
 .panel-footer {
   border-top: 1px solid var(--line);

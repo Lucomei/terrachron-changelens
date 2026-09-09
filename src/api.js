@@ -1,7 +1,8 @@
 import { useWorkspace } from './stores/workspace.js';
 import { cropImagery } from './services/imagery.js';
-import { searchHistory } from './services/history.js';
+import { searchClosestHistory, searchHistory } from './services/history.js';
 import { historyProviders } from './services/providers/esri.js';
+import { fetchPoiDescription } from './services/poi.js';
 
 /** Public API factory. All component and external operations use the same boundary. */
 export function createTerraChronApi(pinia) {
@@ -15,7 +16,22 @@ export function createTerraChronApi(pinia) {
   async function createRegion({ center }) {
     const region = store.addRegion(center);
     await store.captureLatest(region.id, (r, options) => cropImagery(r, null, options));
+    await store.loadPoi(region.id, (r, options) => fetchPoiDescription(r.center, options));
     return region;
+  }
+
+  async function fetchClosestHistory({ regionId, timePoint, providerId = 'esri-wayback' }) {
+    const region = regionById(regionId);
+    const provider = historyProviders.find((p) => p.id === providerId);
+    if (!provider) throw new Error('该来源不支持历史查询');
+    region.timePoint = { ...timePoint };
+    region.providerId = providerId;
+    await store.queryRegion(regionId, (r, options) =>
+      searchClosestHistory(r, options.range, provider, options),
+    );
+    const observationId = region.history.closest?.observation?.id;
+    if (observationId) await getImageAsset({ regionId, observationId });
+    return region.history;
   }
 
   async function queryHistory({ regionId, startDate, endDate, providerId = 'esri-wayback' }) {
@@ -24,8 +40,10 @@ export function createTerraChronApi(pinia) {
     if (!provider) throw new Error('该来源不支持历史查询');
     region.range = { startDate, endDate };
     region.providerId = providerId;
-    await store.queryRegion(regionId, (r, options) =>
-      searchHistory(r, options.range, provider, options),
+    await store.queryRegion(
+      regionId,
+      (r, options) => searchHistory(r, options.range, provider, options),
+      { startDate, endDate },
     );
     return region.history;
   }
@@ -72,6 +90,7 @@ export function createTerraChronApi(pinia) {
   return {
     createRegion,
     queryHistory,
+    fetchClosestHistory,
     getImageAsset,
     refreshLatest: (id) => store.captureLatest(id, (r, options) => cropImagery(r, null, options)),
     cancel: (id, kind) => store.cancelRegion(id, kind),

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { searchHistory } from '../src/services/history.js';
+import { searchClosestHistory, searchHistory } from '../src/services/history.js';
 import { createFootprint } from '../src/domain/geometry.js';
 
 test('filters acquisition dates, preserves unknown dates and discoveries outside the center tile', async () => {
@@ -73,4 +73,23 @@ test('invalid date ranges and cancellation reject without querying', async () =>
     }),
     { name: 'AbortError' },
   );
+});
+
+test('keeps only the nearest observation when searching a single time point', async () => {
+  const provider = {
+    id: 'test',
+    discover: async () => [{ releaseId: 'old' }, { releaseId: 'near' }],
+    metadata: async (region, release) => ({
+      capturedDates: release.releaseId === 'old' ? ['2019-01-01'] : ['2020-07-02'],
+    }),
+  };
+  const result = await searchClosestHistory(
+    { id: 'r' },
+    { year: '2020', month: '', day: '' },
+    provider,
+  );
+  assert.equal(result.observations.length, 1);
+  assert.equal(result.observations[0].releaseId, 'near');
+  assert.equal(result.closest.capturedAt, '2020-07-02');
+  assert.equal(result.target.date, '2020-07-01');
 });

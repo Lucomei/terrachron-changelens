@@ -16,7 +16,22 @@ const current = await api.getImageAsset({ regionId: region.id });
 
 `await api.refreshLatest(regionId)` 重试或刷新当前截取，历史结果不变。`api.cancel(regionId, 'latest')` 取消截取。
 
-## 历史查询
+## 按时间点获取最近历史影像
+
+界面和新集成应使用 `fetchClosestHistory`。`year` 必填；`month`、`day` 允许留空，填写 `day` 前必须填写 `month`。年、月精度分别使用当年 7 月 1 日、当月 15 日作为匹配点，完整日期按当天匹配；返回实际拍摄日期距离最短的一条记录。
+
+```js
+const history = await api.fetchClosestHistory({
+  regionId: region.id,
+  timePoint: { year: '2020', month: '07', day: '' },
+});
+const closest = history.closest;
+// closest.observation 是记录，closest.capturedAt 是实际拍摄日期。
+```
+
+首次截取还会经同源 `/api/poi` 查询周边描述，结果保存在 `region.poi`。Vercel 项目必须配置服务器环境变量 `AMAP_API_KEY`；该值不属于前端环境变量，不能以 `VITE_` 开头。
+
+## 旧版区间查询兼容接口
 
 ```js
 const history = await api.queryHistory({

@@ -3,7 +3,6 @@ import { defineStore } from 'pinia';
 import { createFootprint } from '../domain/geometry.js';
 
 const palette = ['#60b6ff', '#f6bd60', '#79d5b0', '#c5a3ff', '#fa8e9b', '#64d8e8'];
-const today = () => new Date().toISOString().slice(0, 10);
 function regionColor(number, used) {
   if (number <= palette.length) return palette[number - 1];
   let attempt = 0;
@@ -41,8 +40,9 @@ export const useWorkspace = defineStore('workspace', () => {
       name: `区域 ${String(number).padStart(2, '0')}`,
       color: regionColor(number, new Set(regions.value.map((r) => r.color))),
       visible: true,
-      range: { startDate: '2014-01-01', endDate: today() },
+      timePoint: { year: '', month: '', day: '' },
       providerId: 'esri-wayback',
+      poi: { status: 'idle', description: '', error: '', data: null },
       latest: { status: 'idle', url: null, blob: null, error: '', acquiredAt: null },
       history: {
         status: 'idle',
@@ -52,6 +52,8 @@ export const useWorkspace = defineStore('workspace', () => {
         progress: null,
         error: '',
         queryRange: null,
+        target: null,
+        closest: null,
       },
       selectedObservationId: null,
       checkedIds: [],
@@ -73,7 +75,7 @@ export const useWorkspace = defineStore('workspace', () => {
       region.latest.status = 'cancelled';
   }
 
-  async function queryRegion(id, query) {
+  async function queryRegion(id, query, request = null) {
     const region = regions.value.find((r) => r.id === id);
     if (!region) throw new Error('区域已删除');
     cancelRegion(id);
@@ -82,20 +84,21 @@ export const useWorkspace = defineStore('workspace', () => {
     jobs.set(key, controller);
     region.history.status = 'loading';
     region.history.error = '';
-    const range = { ...region.range };
+    const queryInput = request ? { ...request } : { ...region.timePoint };
     try {
       const result = await query(region, {
         signal: controller.signal,
-        range,
+        range: queryInput,
         onProgress: (progress) => {
           if (!controller.signal.aborted) region.history.progress = progress;
         },
       });
       if (controller.signal.aborted || !regions.value.includes(region)) return;
-      Object.assign(region.history, result, { status: 'ready', queryRange: range });
+      Object.assign(region.history, result, { status: 'ready', queryRange: queryInput });
       const ids = new Set([...result.observations, ...result.unknown].map((r) => r.id));
       region.checkedIds = region.checkedIds.filter((id) => ids.has(id));
-      region.selectedObservationId = result.observations[0]?.id || null;
+      region.selectedObservationId = result.closest?.observation?.id || result.observations[0]?.id || null;
+      if (region.selectedObservationId) region.checkedIds = [region.selectedObservationId];
     } catch (error) {
       if (!controller.signal.aborted)
         Object.assign(region.history, { status: 'error', error: error.message });
@@ -128,11 +131,32 @@ export const useWorkspace = defineStore('workspace', () => {
     }
   }
 
+  async function loadPoi(id, lookup) {
+    const region = regions.value.find((r) => r.id === id);
+    if (!region) throw new Error('区域已删除');
+    cancelRegion(id, 'poi');
+    const key = `${id}:poi`;
+    const controller = new AbortController();
+    jobs.set(key, controller);
+    Object.assign(region.poi, { status: 'loading', error: '' });
+    try {
+      const data = await lookup(region, { signal: controller.signal });
+      if (controller.signal.aborted || !regions.value.includes(region)) return;
+      Object.assign(region.poi, { status: 'ready', description: data.description || '', data });
+    } catch (error) {
+      if (!controller.signal.aborted)
+        Object.assign(region.poi, { status: 'error', error: error.message, description: '' });
+    } finally {
+      if (jobs.get(key) === controller) jobs.delete(key);
+    }
+  }
+
   function removeRegion(id) {
     const region = regions.value.find((r) => r.id === id);
     if (!region) return;
     cancelRegion(id);
     cancelRegion(id, 'latest');
+    cancelRegion(id, 'poi');
     for (const asset of [region.latest, ...Object.values(region.assets)]) {
       if (asset.url) URL.revokeObjectURL(asset.url);
     }
@@ -153,5 +177,6 @@ export const useWorkspace = defineStore('workspace', () => {
     cancelRegion,
     queryRegion,
     captureLatest,
+    loadPoi,
   };
 });

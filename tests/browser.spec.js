@@ -74,6 +74,13 @@ test('region card loads POI then retrieves the closest historical image for a ti
   await expect(page.getByRole('heading', { name: 'TerraChron' })).toBeVisible();
   await page.getByRole('button', { name: '截取并加入区域库' }).click();
   await expect(page.getByTestId('poi-description')).toContainText('和平饭店');
+  const library = page.getByTestId('region-panel');
+  const libraryBox = await library.boundingBox();
+  expect(libraryBox.x).toBeGreaterThan(900);
+  expect(libraryBox.width).toBeLessThanOrEqual(370);
+  await page.getByTestId('poi-description').hover();
+  await expect(page.getByTestId('poi-tooltip')).toContainText('上海市黄浦区南京东路；外滩街道；和平饭店');
+  await expect(page.getByTestId('poi-tooltip')).toHaveCSS('opacity', '1');
   await expect(page.getByText('目标时间点')).toBeVisible();
   const yearBox = await page.getByLabel('目标年份').boundingBox();
   const monthBox = await page.getByLabel('目标月份').boundingBox();
@@ -97,7 +104,8 @@ test('region card loads POI then retrieves the closest historical image for a ti
   await page.mouse.move(divider.x + 70, divider.y + divider.height / 2);
   await page.mouse.up();
   expect(Number(await page.getByLabel('卷帘位置').inputValue())).toBeGreaterThan(55);
-  await page.getByRole('button', { name: '关闭比对' }).click();
+  await page.getByRole('button', { name: '关闭比对' }).dispatchEvent('click');
+  await expect(page.getByRole('dialog', { name: '影像时序比对' })).toHaveCount(0);
   await page.getByRole('button', { name: '数据输出' }).click();
   const downloaded = page.waitForEvent('download');
   await page.getByRole('button', { name: '下载影像数据包' }).click();

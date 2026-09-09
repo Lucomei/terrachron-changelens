@@ -48,7 +48,7 @@ const observation = computed(
         街道定位</button
       ><span class="basemap-note">提供方当前版本</span>
     </div>
-    <main class="workspace-panels"><div class="left-panels"><CapturePanel /><RegionPanel @compare="comparison = $event" /></div></main>
+    <main class="workspace-panels"><div class="left-panels"><CapturePanel /></div><RegionPanel @compare="comparison = $event" /></main>
     <div class="map-caption">
       <span class="crosshair-mark">＋</span>
       <div>在空间中选取<span>在时间中探索</span></div>

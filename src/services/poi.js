@@ -15,10 +15,16 @@ export function makePoiDescription(regeocode = {}) {
   return parts.join('；') || '未获取到周边 POI 描述';
 }
 
+function friendlyPoiError(error) {
+  if (/US(?:ER|R)KEY_PLAT_NOMATCH/.test(error || ''))
+    return '高德 Key 类型不匹配：请创建并填写“Web 服务”类型的 Key。';
+  return error || 'POI 描述获取失败';
+}
+
 export async function fetchPoiDescription([longitude, latitude], { signal, fetchImpl = fetch } = {}) {
   const params = new URLSearchParams({ longitude: String(longitude), latitude: String(latitude) });
   const response = await fetchImpl(`/api/poi?${params}`, { signal });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || 'POI 描述获取失败');
+  if (!response.ok) throw new Error(friendlyPoiError(payload.error));
   return payload;
 }

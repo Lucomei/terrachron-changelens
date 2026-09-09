@@ -74,6 +74,12 @@ test('region card loads POI then retrieves the closest historical image for a ti
   await expect(page.getByRole('heading', { name: 'TerraChron' })).toBeVisible();
   await page.getByRole('button', { name: '截取并加入区域库' }).click();
   await expect(page.getByTestId('poi-description')).toContainText('和平饭店');
+  await expect(page.getByText('目标时间点')).toBeVisible();
+  const yearBox = await page.getByLabel('目标年份').boundingBox();
+  const monthBox = await page.getByLabel('目标月份').boundingBox();
+  const dayBox = await page.getByLabel('目标日期').boundingBox();
+  expect(yearBox.y).toBeCloseTo(monthBox.y, 0);
+  expect(monthBox.y).toBeCloseTo(dayBox.y, 0);
   await expect(page.getByTestId('history-preview')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /获取历史图像/ })).toBeDisabled();
   await page.getByLabel('目标年份').selectOption('2020');

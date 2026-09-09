@@ -27,3 +27,13 @@ test('calls the same-origin POI endpoint with WGS84 coordinates', async () => {
   assert.match(requested, /^\/api\/poi\?longitude=121.4737&latitude=31.2304$/);
   assert.equal(result.description, '外滩');
 });
+
+test('explains an AMap platform mismatch without exposing a raw service code', async () => {
+  await assert.rejects(
+    fetchPoiDescription([121.4737, 31.2304], {
+      fetchImpl: async () =>
+        new Response(JSON.stringify({ error: 'USERKEY_PLAT_NOMATCH' }), { status: 502 }),
+    }),
+    /Web 服务.*类型/,
+  );
+});

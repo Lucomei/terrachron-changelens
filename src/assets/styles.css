@@ -574,10 +574,23 @@ img {
   min-width: 0;
 }
 .timepoint-row {
+  padding: 0 9px 8px;
+}
+.timepoint-row > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #8da3bc;
+  font-size: 9px;
+}
+.timepoint-fields {
   display: grid;
   grid-template-columns: 1.25fr 1fr 1fr;
   gap: 5px;
-  padding: 0 9px 8px;
+}
+.timepoint-fields label {
+  display: block;
+}
+.timepoint-row {
 }
 .timepoint-row label {
   font-size: 9px;
@@ -585,7 +598,7 @@ img {
 }
 .timepoint-row select {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 0;
   padding: 6px 4px;
   color: #c7d8ea;
   border: 1px solid #355677;

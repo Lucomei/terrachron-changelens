@@ -1,4 +1,6 @@
-# TerraChron Implementation Plan
+# TerraChron Implementation Plan · 已完成
+
+> 该首版计划已于 2026-09-09 完成。后续 POI 与时间点重构见 [v0.2.0 工作记录](agents/issue-tracker.md)，实施细节见 [region-poi-timepoint 计划](superpowers/plans/2026-09-09-region-poi-timepoint.md)。
 
 **Goal:** 交付最新区域截取、独立历史查询与图片数据传递的完整前端。
 

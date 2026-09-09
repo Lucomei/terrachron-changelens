@@ -6,11 +6,11 @@
 
 独立 Vue 3、Vite、Pinia、OpenLayers 应用，参考原项目的全屏地图、深蓝半透明浮动面板、蓝色描边与拖拽交互。以区域采样及历史影像查询替代视觉定位业务，不复用 VLM 接口。
 
-左侧区域库：输入 WGS84 经纬度或地图点选，预览以坐标为中心、地面尺寸 256 m × 256 m 的区域，点击截取后加入图库。每个区域有独立 ID、颜色、中心、边界、预览及历史记录。尺寸为地面距离，不能直接将 Web Mercator 坐标加减 128 当作地面米数；使用局部米制坐标构造范围并转换。输出像素数与地面尺寸分开记录，建议默认 512 × 512，不代表源数据达到 0.5 m 分辨率。
+左侧截取浮窗：输入 WGS84 经纬度或地图点选，以坐标为中心创建地面尺寸 256 m × 256 m 的区域。尺寸为地面距离，使用局部米制坐标构造范围并转换；默认输出 512 × 512 像素，不代表源影像达到 0.5 m 分辨率。
 
-右侧历史面板：每个区域保存独立开始日期、结束日期、选中记录、请求状态；日期输入配合可选择的时间轴。点击“获取历史图像”返回同一区域的历史缩略图、拍摄日期、发布日期和来源。选中历史记录只改变独立历史预览和比对窗口，支持分栏与卷帘比对，列表延迟加载图像。
+右侧区域库：每个区域拥有独立 ID、颜色、中心、边界、POI 描述、时间点和历史状态。区域库为固定宽度浮窗，新增区域只在其内部列表滚动。POI 摘要超长时省略，悬停在页面顶层显示完整内容。选择年份（必填）、月份或日期（可选）后获取该区域中拍摄日期最近的一张历史影像，并可进入分栏或卷帘比对。
 
-用户补充：主地图与区域库截取始终使用提供方当前发布的最新影像。历史版本仅用于历史列表及独立比对，不替换主地图底图，不覆盖区域最新截取。最新不表示今天拍摄。
+主地图和当前截取始终使用提供方当前发布的最新影像。历史版本只用于区域卡片预览、比对和导出，不替换主地图底图；“最新”不表示今日拍摄。
 
 ## 来源与日期
 
@@ -32,19 +32,19 @@ Google Earth 提供历史影像浏览界面，但在核查的公开 Google Maps 
 
 ## 模块
 
-- components：地图、区域采样、区域库、历史时间轴、历史列表、影像比对、数据输出。
+- components：地图、区域采样、右侧区域库、区域内时间点查询、影像比对、数据输出。
 - stores：mapStore、regionStore；状态按 regionId 隔离。
 - composables：地图初始化、区域图层、面板拖拽与请求生命周期。
 - services/providers：来源能力及 Esri 适配器。
 - services：区域裁切、历史查询、导出、传递适配器。
-- utils：地面范围与坐标转换、日期和图像处理。
+- domain：地面范围、坐标转换和时间点匹配。
 
 ## 对外数据与接口契约
 
 提供可调用方法，不仅展示界面：
 
-- createRegion({ center, sizeMeters, outputSize })：区域与当前影像。
-- queryHistory({ regionId, startDate, endDate, providerId, signal })：历史记录及元数据。
+- createRegion({ center, sizeMeters, outputSize })：区域、当前影像与 POI 查询。
+- fetchClosestHistory({ regionId, timePoint, providerId, signal })：距离时间点最近的历史记录及元数据。
 - getImageAsset({ regionId, observationId, signal })：可传递的 Blob 和文件名。
 - exportSelection({ regionIds, observationIds })：JSON 清单及图片文件的可下载数据包。
 - sendSelection({ endpoint, regionIds, observationIds, signal })：通过可配置 HTTP POST 传递数据包；未配置接收端时清晰提示，仍能导出。

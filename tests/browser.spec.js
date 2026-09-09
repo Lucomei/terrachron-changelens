@@ -80,7 +80,9 @@ test('region card loads POI then retrieves the closest historical image for a ti
   expect(libraryBox.width).toBeLessThanOrEqual(370);
   await page.getByTestId('poi-description').hover();
   await expect(page.getByTestId('poi-tooltip')).toContainText('上海市黄浦区南京东路；外滩街道；和平饭店');
-  await expect(page.getByTestId('poi-tooltip')).toHaveCSS('opacity', '1');
+  await expect(page.getByTestId('poi-tooltip')).toHaveClass(/poi-floating-tooltip/);
+  const tooltipBox = await page.getByTestId('poi-tooltip').boundingBox();
+  expect(tooltipBox.y).toBeGreaterThan(libraryBox.y);
   await expect(page.getByText('目标时间点')).toBeVisible();
   const yearBox = await page.getByLabel('目标年份').boundingBox();
   const monthBox = await page.getByLabel('目标月份').boundingBox();

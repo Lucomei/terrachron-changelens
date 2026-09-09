@@ -581,12 +581,9 @@ img {
   text-overflow: ellipsis;
   min-width: 0;
 }
-.poi-tooltip {
-  position: absolute;
-  z-index: 20;
-  left: 0;
-  top: calc(100% + 7px);
-  width: min(320px, calc(100vw - 54px));
+.poi-floating-tooltip {
+  position: fixed;
+  z-index: 1000;
   padding: 8px 9px;
   border: 1px solid #4d759a;
   border-radius: 4px;
@@ -595,16 +592,8 @@ img {
   font-size: 10px;
   line-height: 1.55;
   white-space: normal;
-  box-shadow: 0 8px 22px #0008;
-  opacity: 0;
+  box-shadow: 0 12px 28px #000b, 0 2px 7px #0009;
   pointer-events: none;
-  transform: translateY(-3px);
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-.poi-description:hover .poi-tooltip,
-.poi-description:focus-within .poi-tooltip {
-  opacity: 1;
-  transform: translateY(0);
 }
 .timepoint-row {
   padding: 0 9px 8px;

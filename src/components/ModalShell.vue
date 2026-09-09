@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
-defineProps({ label: String, wide: Boolean });
+defineProps({ label: String, wide: Boolean, resizable: Boolean });
 const emit = defineEmits(['close']);
 const dialog = ref(null);
 let previous;
@@ -18,7 +18,7 @@ onBeforeUnmount(() => {
     ><dialog
       ref="dialog"
       class="modal-shell"
-      :class="{ wide }"
+      :class="{ wide, resizable }"
       :aria-label="label"
       @cancel.prevent="emit('close')"
       @click="

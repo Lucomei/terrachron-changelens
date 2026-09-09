@@ -74,6 +74,9 @@ test('latest capture, independent history, compare and real ZIP download', async
   await page.getByLabel('开始日期').fill('2020-01-01');
   await page.getByLabel('结束日期').fill('2020-12-31');
   await page.getByRole('button', { name: '获取历史图像', exact: true }).click();
+  await page.getByRole('button', { name: '查看历史影像' }).click();
+  await expect(page.getByRole('dialog', { name: '历史影像列表' })).toBeVisible();
+  await expect(page.getByTestId('history-dialog')).toBeVisible();
   await expect(page.getByTestId('observation-card')).toHaveCount(1);
   await expect(page.getByTestId('observation-card')).toContainText('2020-06-01');
   await expect(page.getByTestId('observation-card')).toContainText('2025-01-01');
@@ -89,7 +92,9 @@ test('latest capture, independent history, compare and real ZIP download', async
   await page.mouse.up();
   expect(Number(await page.getByLabel('卷帘位置').inputValue())).toBeGreaterThan(55);
   await page.getByRole('button', { name: '关闭比对' }).click();
+  await page.getByRole('button', { name: '查看历史影像' }).click();
   await page.getByRole('checkbox', { name: '选择此历史影像用于输出' }).check();
+  await page.getByRole('button', { name: '关闭历史影像' }).click();
   await page.getByRole('button', { name: '数据输出' }).click();
   const downloaded = page.waitForEvent('download');
   await page.getByRole('button', { name: '下载影像数据包' }).click();

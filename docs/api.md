@@ -32,7 +32,7 @@ const unknownDates = history.unknown;
 
 日期采用 `YYYY-MM-DD`，起止日期均包含。先发现区域的变化版本，再查询每个版本的拍摄元数据；发布日期不作为拍摄过滤条件。多日期拼接中任一日期匹配即返回，同时 `partialDateMatch` 标明是否有日期超出区间。
 
-返回 `status`（idle/loading/ready/error/cancelled）、`observations`、`unknown`、`warnings`、`queryRange` 与进度。服务失败保留原有结果和原查询范围，状态变为 error；元数据单条失败作为 unknown 和 warnings 返回。用 `api.cancel(regionId)` 取消历史查询；同一区域开始新查询会取消前一个。
+返回 `status`（idle/loading/ready/error/cancelled）、`observations`、`unknown`、`warnings`、`queryRange` 与进度。界面查询面板仅展示摘要，成功后“查看历史影像”打开独立可拉伸分页浮窗，每页最多 5 条；服务失败保留原有结果和原查询范围，状态变为 error；元数据单条失败作为 unknown 和 warnings 返回。用 `api.cancel(regionId)` 取消历史查询；同一区域开始新查询会取消前一个。
 
 每条记录保留 `id`、`regionId`、`providerId`、`releaseId`、`capturedAt`（单一日期或 null）、`capturedDates`（全部已知日期）、`publishedAt`、`metadata`、`tileTemplate`、署名及查询范围。`metadata.sources` 含拍摄来源、原始字段和相交多边形；`hasUnknownDates` 标明有未知拍摄时间的覆盖。
 

@@ -3,31 +3,21 @@ import { computed, inject, ref, watch } from 'vue';
 import { useWorkspace } from '../stores/workspace.js';
 import { useDraggable } from '../composables/useDraggable.js';
 import { historyProviders } from '../services/providers/esri.js';
-import ObservationCard from './ObservationCard.vue';
+import HistoryResultsDialog from './HistoryResultsDialog.vue';
 const emit = defineEmits(['compare']);
 const store = useWorkspace(),
   api = inject('terrachron');
 const region = computed(() => store.activeRegion);
 const panel = ref(null),
   handle = ref(null),
-  page = ref(1),
-  showUnknown = ref(false),
   error = ref('');
+const resultsOpen = ref(false);
 useDraggable(panel, handle);
-const items = computed(() =>
-  region.value
-    ? showUnknown.value
-      ? region.value.history.unknown
-      : region.value.history.observations
-    : [],
-);
-const pages = computed(() => Math.max(1, Math.ceil(items.value.length / 4)));
-const visibleItems = computed(() => items.value.slice((page.value - 1) * 4, page.value * 4));
 watch(
-  () => [store.activeId, items.value],
+  () => store.activeId,
   () => {
-    page.value = 1;
     error.value = '';
+    resultsOpen.value = false;
   },
 );
 const minimum = Date.parse('1980-01-01') / 86400000;
@@ -41,7 +31,6 @@ function slide(key, event) {
 }
 async function query() {
   error.value = '';
-  showUnknown.value = false;
   try {
     await api.queryHistory({
       regionId: region.value.id,
@@ -146,48 +135,39 @@ async function query() {
         </div>
         <p v-if="region.history.status === 'cancelled'" class="micro">查询已取消，原有结果保留。</p>
       </div>
-      <div v-if="region.history.queryRange" class="history-results">
+      <div v-if="region.history.queryRange" class="history-results-summary">
         <div class="results-heading">
           <h3>
             历史记录 <span>{{ region.history.observations.length }}</span>
           </h3>
-          <button
-            v-if="region.history.unknown.length"
-            class="text-button"
-            @click="showUnknown = !showUnknown"
-          >
-            {{ showUnknown ? '返回日期匹配' : `日期未知 (${region.history.unknown.length})` }}
-          </button>
+          <span class="tag historical">{{
+            region.history.unknown.length
+              ? `另有 ${region.history.unknown.length} 条日期未知`
+              : '日期已核实'
+          }}</span>
         </div>
         <p class="micro results-range">
           查询范围 {{ region.history.queryRange.startDate }} —
           {{ region.history.queryRange.endDate }}
         </p>
-        <details v-if="region.history.warnings.length" class="warnings">
-          <summary>{{ region.history.warnings.length }} 个版本的日期读取失败</summary>
-          <p v-for="warning in region.history.warnings" :key="warning">{{ warning }}</p>
-        </details>
-        <div v-if="!items.length" class="empty-state compact">
-          <strong>此时间范围暂无匹配影像</strong>
-          <p>可以扩大日期范围后重新查询。</p>
-        </div>
-        <ObservationCard
-          v-for="observation in visibleItems"
-          :key="observation.id"
-          :region="region"
-          :observation="observation"
-          @compare="emit('compare', { regionId: region.id, observationId: observation.id })"
-        />
-        <nav v-if="pages > 1" class="pagination" aria-label="历史影像分页">
-          <button :disabled="page === 1" @click="page--">← 上一页</button
-          ><span>{{ page }} / {{ pages }}</span
-          ><button :disabled="page === pages" @click="page++">下一页 →</button>
-        </nav>
+        <button
+          class="primary full view-history-button"
+          :disabled="!region.history.observations.length && !region.history.unknown.length"
+          @click="resultsOpen = true"
+        >
+          查看历史影像 <span aria-hidden="true">↗</span>
+        </button>
       </div>
       <div v-else-if="region.history.status !== 'loading'" class="history-wait">
         <span>◷</span>
         <p>选择时间范围，开始获取历史影像</p>
       </div>
     </template>
+    <HistoryResultsDialog
+      v-if="resultsOpen && region"
+      :region="region"
+      @close="resultsOpen = false"
+      @compare="emit('compare', $event)"
+    />
   </section>
 </template>

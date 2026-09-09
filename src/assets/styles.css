@@ -1011,6 +1011,70 @@ img {
 .modal-shell.wide {
   width: 1100px;
 }
+.modal-shell.resizable {
+  resize: both;
+  min-width: 560px;
+  min-height: 430px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+}
+.history-dialog {
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+}
+.history-dialog .modal-heading {
+  flex-shrink: 0;
+}
+.modal-subtitle {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 8px;
+}
+.history-dialog-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 24px 10px;
+  color: #aac0d7;
+  font-size: 11px;
+}
+.history-dialog-toolbar strong {
+  color: #dbe8f5;
+  font-weight: 500;
+  margin-right: 10px;
+}
+.history-dialog-toolbar span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.history-dialog-list {
+  padding: 0 24px 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  overflow: auto;
+  flex: 1;
+  align-content: start;
+}
+.history-dialog-list .observation-card {
+  margin: 0;
+}
+.dialog-pagination {
+  padding: 12px 24px 18px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.history-results-summary {
+  border-top: 1px solid var(--line);
+  padding: 14px 17px 17px;
+}
+.history-results-summary .results-heading {
+  margin-bottom: 8px;
+}
+.view-history-button {
+  margin-top: 14px;
+}
 .modal-inner {
   border: 1px solid #3b5c7e;
   border-radius: 12px;

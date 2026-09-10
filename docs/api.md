@@ -31,6 +31,43 @@ const closest = history.closest;
 
 首次截取还会经同源 `/api/poi` 查询周边描述，结果保存在 `region.poi`。Vercel 项目必须配置服务器环境变量 `AMAP_API_KEY`；该值不属于前端环境变量，不能以 `VITE_` 开头。
 
+## 本地模型变化检测接口
+
+模型服务由甲方在本地部署，前端不保存模型 URL 以外的凭据。设置 `VITE_MODEL_API_BASE` 后，区域卡片中的“模型变化检测”会调用 `${VITE_MODEL_API_BASE}/analyze`；未设置时按钮保持禁用。
+
+```js
+const analysis = await api.analyzeChange({
+  regionId: region.id,
+  taskType: 'comprehensive',
+  resultFormat: 'json',
+});
+// analysis.status: idle | loading | ready | error | cancelled
+// analysis.result: 标准化后的 Markdown 或 JSON 结果
+```
+
+请求为 `multipart/form-data`，字段与甲方 V1.0 文档一致：
+
+| 字段 | 内容 |
+| --- | --- |
+| `image` | 已选择历史记录的 PNG 文件 |
+| `poi_data` | `{ pois: [...] }`；包含当前区域地址、POI 原始上下文和来源信息 |
+| `image_meta` | `bbox: [minLon, minLat, maxLon, maxLat]`、`crs: EPSG:4326`、历史拍摄日期、来源和 0.5 m/pixel 采样间距 |
+| `task_type` | 默认 `comprehensive`，可改为服务端支持的任务 |
+| `result_format` | `json` 或 `markdown` |
+| `options` | 中文输出、置信度、区域和 POI 分析开关 |
+
+成功响应必须为 `{ code: 0, request_id, data }`。`data.result_format === 'markdown'` 时前端保留报告文本；JSON 结果显示摘要和 findings。只有模型明确返回 `data.result.change` 时，前端才显示“是否变化”“变化前类型”和“变化后类型”；通用分析结果不会被前端擅自解释为变化结论。
+
+可供宿主或桌面桥接调用的方法：
+
+```js
+await api.checkModelHealth();
+await api.getModelInfo();
+await api.analyzeChange({ regionId });
+```
+
+`createTerraChronApi(pinia, { modelClient })` 接受替代客户端。甲方可注入其本地桥接、认证或测试实现，保持界面、区域状态和结果渲染不变。
+
 ## 旧版区间查询兼容接口
 
 ```js

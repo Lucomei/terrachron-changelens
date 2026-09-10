@@ -642,6 +642,40 @@ img {
 .history-card-action .compare-button {
   flex: 0 0 auto;
 }
+.model-action {
+  padding: 7px 9px 0;
+}
+.model-action .secondary {
+  padding: 7px;
+  font-size: 10px;
+}
+.model-action .micro {
+  padding-top: 4px;
+}
+.model-action .text-button {
+  padding: 6px 0 0;
+  color: var(--blue);
+  font-size: 10px;
+}
+.model-result-content { padding: 18px 22px; display: grid; gap: 14px; }
+.model-input-preview { display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: center; }
+.model-input-preview img { width: 112px; height: 112px; object-fit: cover; border-radius: 5px; border: 1px solid #3d5e7e; }
+.model-input-preview figcaption { font-size: 11px; color: #aabdd0; }
+.model-context, .generic-analysis, .change-conclusion { border: 1px solid #314d68; border-radius: 6px; padding: 12px; }
+.model-context strong, .generic-analysis h3 { font-size: 12px; }
+.model-context p, .generic-analysis p { margin-top: 7px; font-size: 11px; line-height: 1.7; color: #b8c9db; }
+.change-conclusion { border-color: #55718a; background: #315b7d12; }
+.change-conclusion.changed { border-color: #b28a4d; }
+.change-conclusion h3 { margin: 9px 0 7px; font-size: 18px; font-weight: 500; }
+.change-conclusion h3 span { color: var(--blue); padding: 0 5px; }
+.change-conclusion p { font-size: 11px; line-height: 1.7; color: #c3d1df; }
+.change-conclusion small { display: block; margin-top: 8px; color: #8ba5bd; font-size: 10px; }
+.generic-analysis ul { margin-top: 10px; display: grid; gap: 7px; }
+.generic-analysis li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 11px; }
+.generic-analysis li span { grid-column: 1; color: #a7bbce; line-height: 1.5; }
+.generic-analysis li small { grid-column: 2; grid-row: 1; color: #8cdbbe; }
+.model-markdown pre { white-space: pre-wrap; font: 11px/1.75 ui-monospace, Consolas, monospace; color: #c3d4e5; }
+.model-result-footer { display: flex; flex-wrap: wrap; gap: 12px; color: #7f98b0; font-size: 9px; }
 .timepoint-note,
 .region-card .query-progress {
   padding: 6px 9px 0;

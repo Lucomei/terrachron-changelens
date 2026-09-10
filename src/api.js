@@ -3,9 +3,14 @@ import { cropImagery } from './services/imagery.js';
 import { searchClosestHistory, searchHistory } from './services/history.js';
 import { historyProviders } from './services/providers/esri.js';
 import { fetchPoiDescription } from './services/poi.js';
+import { createModelClient } from './services/model-client.js';
+import { normalizeModelResult } from './services/change-result.js';
 
 /** Public API factory. All component and external operations use the same boundary. */
-export function createTerraChronApi(pinia) {
+export function createTerraChronApi(
+  pinia,
+  { modelClient = createModelClient({ baseUrl: import.meta.env?.VITE_MODEL_API_BASE || '' }) } = {},
+) {
   const store = useWorkspace(pinia);
   const regionById = (id) => {
     const region = store.regions.find((r) => r.id === id);
@@ -69,6 +74,50 @@ export function createTerraChronApi(pinia) {
     return region.assets[observationId];
   }
 
+  function poiDataFor(region) {
+    if (region.poi.data?.poiData?.pois?.length) return region.poi.data.poiData;
+    return {
+      pois: [
+        {
+          id: `${region.id}_current_address`,
+          name: region.poi.data?.formattedAddress || region.poi.description || '区域中心',
+          category: 'address',
+          longitude: region.center[0],
+          latitude: region.center[1],
+          address: region.poi.data?.formattedAddress || '',
+          properties: { source: region.poi.data?.source || 'TerraChron', description: region.poi.description || '' },
+        },
+      ],
+    };
+  }
+
+  async function analyzeChange({ regionId, taskType = 'comprehensive', resultFormat = 'json', signal } = {}) {
+    const region = regionById(regionId);
+    const observation = region.history.closest?.observation;
+    if (!observation) throw new Error('请先获取一张历史影像');
+    const asset = await getImageAsset({ regionId, observationId: observation.id, signal });
+    await store.analyzeRegion(regionId, async (ownedRegion, { signal: jobSignal }) => {
+      const response = await modelClient.analyzeChange({
+        image: asset.blob,
+        filename: `${ownedRegion.id}_${observation.capturedAt || 'historical'}.png`,
+        poiData: poiDataFor(ownedRegion),
+        imageMeta: {
+          bbox: ownedRegion.bbox,
+          crs: 'EPSG:4326',
+          acquired_at: observation.capturedAt || null,
+          source: observation.providerId || 'esri-wayback',
+          gsd: ownedRegion.sizeMeters / ownedRegion.outputSize,
+          properties: { region_id: ownedRegion.id, historical_release_id: observation.releaseId },
+        },
+        taskType,
+        resultFormat,
+        signal: signal || jobSignal,
+      });
+      return normalizeModelResult(response);
+    });
+    return region.analysis;
+  }
+
   async function packageSelection({ regionIds, observationIds }, options) {
     const { createPackage } = await import('./services/transfer.js');
     const selections = regionIds.map((id) => {
@@ -92,6 +141,10 @@ export function createTerraChronApi(pinia) {
     queryHistory,
     fetchClosestHistory,
     getImageAsset,
+    analyzeChange,
+    checkModelHealth: (options) => modelClient.health(options),
+    getModelInfo: (options) => modelClient.modelInfo(options),
+    isModelConfigured: () => modelClient.configured !== false,
     refreshLatest: (id) => store.captureLatest(id, (r, options) => cropImagery(r, null, options)),
     cancel: (id, kind) => store.cancelRegion(id, kind),
     exportSelection: async (selection, options) => {

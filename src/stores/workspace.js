@@ -43,6 +43,7 @@ export const useWorkspace = defineStore('workspace', () => {
       timePoint: { year: '', month: '', day: '' },
       providerId: 'esri-wayback',
       poi: { status: 'idle', description: '', error: '', data: null },
+      analysis: { status: 'idle', error: '', result: null },
       latest: { status: 'idle', url: null, blob: null, error: '', acquiredAt: null },
       history: {
         status: 'idle',
@@ -73,6 +74,8 @@ export const useWorkspace = defineStore('workspace', () => {
       region.history.status = 'cancelled';
     if (region && kind === 'latest' && region.latest.status === 'loading')
       region.latest.status = 'cancelled';
+    if (region && kind === 'analysis' && region.analysis.status === 'loading')
+      region.analysis.status = 'cancelled';
   }
 
   async function queryRegion(id, query, request = null) {
@@ -151,12 +154,33 @@ export const useWorkspace = defineStore('workspace', () => {
     }
   }
 
+  async function analyzeRegion(id, analyze) {
+    const region = regions.value.find((r) => r.id === id);
+    if (!region) throw new Error('区域已删除');
+    cancelRegion(id, 'analysis');
+    const key = `${id}:analysis`;
+    const controller = new AbortController();
+    jobs.set(key, controller);
+    Object.assign(region.analysis, { status: 'loading', error: '' });
+    try {
+      const result = await analyze(region, { signal: controller.signal });
+      if (controller.signal.aborted || !regions.value.includes(region)) return;
+      Object.assign(region.analysis, { status: 'ready', result });
+    } catch (error) {
+      if (!controller.signal.aborted)
+        Object.assign(region.analysis, { status: 'error', error: error.message });
+    } finally {
+      if (jobs.get(key) === controller) jobs.delete(key);
+    }
+  }
+
   function removeRegion(id) {
     const region = regions.value.find((r) => r.id === id);
     if (!region) return;
     cancelRegion(id);
     cancelRegion(id, 'latest');
     cancelRegion(id, 'poi');
+    cancelRegion(id, 'analysis');
     for (const asset of [region.latest, ...Object.values(region.assets)]) {
       if (asset.url) URL.revokeObjectURL(asset.url);
     }
@@ -178,5 +202,6 @@ export const useWorkspace = defineStore('workspace', () => {
     queryRegion,
     captureLatest,
     loadPoi,
+    analyzeRegion,
   };
 });

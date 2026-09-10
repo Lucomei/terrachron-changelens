@@ -65,3 +65,14 @@ test('POI state and selected time point are isolated by region', () => {
   assert.equal(b.poi.description, '');
   assert.equal(b.timePoint.year, '');
 });
+
+test('a model analysis result stays with the region that submitted it', async () => {
+  setActivePinia(createPinia());
+  const store = useWorkspace();
+  const a = store.addRegion([116.39, 39.9]);
+  const b = store.addRegion([121.47, 31.23]);
+  await store.analyzeRegion(a.id, async () => ({ requestId: 'req_a', summary: '检测到变化' }));
+  assert.equal(a.analysis.status, 'ready');
+  assert.equal(a.analysis.result.requestId, 'req_a');
+  assert.equal(b.analysis.status, 'idle');
+});

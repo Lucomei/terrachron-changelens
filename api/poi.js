@@ -56,6 +56,26 @@ export default async function handler(request, response) {
       description: description(regeocode),
       formattedAddress: regeocode.formatted_address || '',
       source: 'AMap',
+      poiData: {
+        pois: [
+          {
+            id: `amap_area_${longitude}_${latitude}`,
+            name: regeocode.formatted_address || '区域中心',
+            category: 'address',
+            longitude,
+            latitude,
+            address: regeocode.formatted_address || '',
+            properties: {
+              source: 'amap',
+              coordinate_system: 'WGS84',
+              township: regeocode.addressComponent?.township || '',
+              nearby_pois: (regeocode.pois || []).map((poi) => ({ id: poi.id, name: poi.name, type: poi.type, location: poi.location })),
+              nearby_aois: (regeocode.aois || []).map((aoi) => ({ id: aoi.id, name: aoi.name, type: aoi.type })),
+              nearby_roads: (regeocode.roads || []).map((road) => ({ name: road.name, distance: road.distance })),
+            },
+          },
+        ],
+      },
     });
   } catch (error) {
     return response.status(502).json({ error: error.message || '高德地图服务请求失败' });

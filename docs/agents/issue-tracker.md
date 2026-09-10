@@ -2,6 +2,16 @@
 
 本项目为无远程仓库的独立本地项目。以 Git 提交、版本标签和本文件追踪工作，不创建外部 issue。
 
+## 工作记录 3 · 2026-09-10 · 本地模型接入预留
+
+**状态：已完成前端预留，等待甲方本地模型服务。**
+
+- 按 V1.0 文档封装健康检查、模型信息和 `/analyze` 的 multipart 传输。
+- 使用历史影像、当前 POI JSON、WGS84 bbox 与历史日期构造模型输入。
+- 增加区域级请求状态、取消处理、Markdown/JSON 渲染和显式变化结论适配。
+- 未设置 `VITE_MODEL_API_BASE` 时不发起网络调用；模型按钮以配置提示保持禁用。
+- 已提供 `createTerraChronApi(pinia, { modelClient })` 注入点，供甲方本地桥接替换传输实现。
+
 ## 工作记录 2 · 2026-09-09 · v0.2.0
 
 **状态：已完成并发布。** 生产地址为 https://terrachron.vercel.app/ ，部署 ID 为 `dpl_4Zm4Q9kSPkXg847qhNuqKvneX5mQ`。

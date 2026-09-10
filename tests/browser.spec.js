@@ -56,6 +56,28 @@ async function imageryFixture(page) {
   await page.route('**/api/poi?**', (route) =>
     route.fulfill({ json: { description: '上海市黄浦区南京东路；外滩街道；和平饭店' } }),
   );
+  await page.route('**/api/agnes', (route) =>
+    route.fulfill({
+      json: {
+        code: 0,
+        request_id: 'agnes_fixture',
+        data: {
+          result_format: 'json',
+          result: {
+            change: {
+              changed: true,
+              before_type: '绿地',
+              after_type: '建设用地',
+              description: '测试变化结论',
+              confidence: 0.91,
+            },
+            findings: [],
+          },
+          meta: { model_version: 'agnes-2.5-flash' },
+        },
+      },
+    }),
+  );
   await page.route(
     /https:\/\/(server\.arcgisonline\.com|wayback\.maptiles\.arcgis\.com)\/(?:.*\/)?(tile|tiles)\//,
     (route) =>
@@ -66,7 +88,9 @@ async function imageryFixture(page) {
   );
 }
 
-test('region card loads POI then retrieves the closest historical image for a time point', async ({ page }) => {
+test('region card loads POI then retrieves the closest historical image for a time point', async ({
+  page,
+}) => {
   await imageryFixture(page);
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -79,7 +103,9 @@ test('region card loads POI then retrieves the closest historical image for a ti
   expect(libraryBox.x).toBeGreaterThan(900);
   expect(libraryBox.width).toBeLessThanOrEqual(370);
   await page.getByTestId('poi-description').hover();
-  await expect(page.getByTestId('poi-tooltip')).toContainText('上海市黄浦区南京东路；外滩街道；和平饭店');
+  await expect(page.getByTestId('poi-tooltip')).toContainText(
+    '上海市黄浦区南京东路；外滩街道；和平饭店',
+  );
   await expect(page.getByTestId('poi-tooltip')).toHaveClass(/poi-floating-tooltip/);
   const tooltipBox = await page.getByTestId('poi-tooltip').boundingBox();
   expect(tooltipBox.y).toBeGreaterThan(libraryBox.y);
@@ -95,7 +121,15 @@ test('region card loads POI then retrieves the closest historical image for a ti
   await page.getByRole('button', { name: /获取历史图像/ }).click();
   await expect(page.getByTestId('history-preview')).toBeVisible();
   await expect(page.getByTestId('history-preview')).toContainText('2020-06-01');
-  await expect(page.getByRole('button', { name: '模型变化检测' })).toBeDisabled();
+  const modelPanel = page.getByTestId('model-panel');
+  await expect(modelPanel).toBeVisible();
+  await expect(modelPanel).toContainText('历史影像 · 2020-06-01');
+  await expect(modelPanel).toContainText('和平饭店');
+  await expect(modelPanel.getByRole('button', { name: '发送模型请求' })).toBeEnabled();
+  await modelPanel.getByRole('button', { name: '发送模型请求' }).click();
+  await expect(modelPanel).toContainText('检测到变化');
+  await expect(modelPanel).toContainText('绿地');
+  await expect(modelPanel).toContainText('建设用地');
   await expect(page.getByTestId('main-map')).toHaveAttribute('data-basemap', 'esri-current');
   await page.getByRole('button', { name: '数据输出' }).click();
   const downloaded = page.waitForEvent('download');

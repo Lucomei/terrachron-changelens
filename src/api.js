@@ -3,14 +3,11 @@ import { cropImagery } from './services/imagery.js';
 import { searchClosestHistory, searchHistory } from './services/history.js';
 import { historyProviders } from './services/providers/esri.js';
 import { fetchPoiDescription } from './services/poi.js';
-import { createModelClient } from './services/model-client.js';
+import { createAgnesClient } from './services/agnes-client.js';
 import { normalizeModelResult } from './services/change-result.js';
 
 /** Public API factory. All component and external operations use the same boundary. */
-export function createTerraChronApi(
-  pinia,
-  { modelClient = createModelClient({ baseUrl: import.meta.env?.VITE_MODEL_API_BASE || '' }) } = {},
-) {
+export function createTerraChronApi(pinia, { modelClient = createAgnesClient() } = {}) {
   const store = useWorkspace(pinia);
   const regionById = (id) => {
     const region = store.regions.find((r) => r.id === id);
@@ -85,13 +82,22 @@ export function createTerraChronApi(
           longitude: region.center[0],
           latitude: region.center[1],
           address: region.poi.data?.formattedAddress || '',
-          properties: { source: region.poi.data?.source || 'TerraChron', description: region.poi.description || '' },
+          properties: {
+            source: region.poi.data?.source || 'TerraChron',
+            description: region.poi.description || '',
+          },
         },
       ],
     };
   }
 
-  async function analyzeChange({ regionId, taskType = 'comprehensive', resultFormat = 'json', signal } = {}) {
+  async function analyzeChange({
+    regionId,
+    taskType = 'comprehensive',
+    resultFormat = 'json',
+    prompt,
+    signal,
+  } = {}) {
     const region = regionById(regionId);
     const observation = region.history.closest?.observation;
     if (!observation) throw new Error('请先获取一张历史影像');
@@ -111,6 +117,7 @@ export function createTerraChronApi(
         },
         taskType,
         resultFormat,
+        prompt,
         signal: signal || jobSignal,
       });
       return normalizeModelResult(response);

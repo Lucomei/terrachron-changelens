@@ -4,14 +4,13 @@ import { useWorkspace } from './stores/workspace.js';
 const MapCanvas = defineAsyncComponent(() => import('./components/MapCanvas.vue'));
 import CapturePanel from './components/CapturePanel.vue';
 import RegionPanel from './components/RegionPanel.vue';
+import ModelPanel from './components/ModelPanel.vue';
 const CompareDialog = defineAsyncComponent(() => import('./components/CompareDialog.vue'));
 const TransferDialog = defineAsyncComponent(() => import('./components/TransferDialog.vue'));
-const ModelResultDialog = defineAsyncComponent(() => import('./components/ModelResultDialog.vue'));
 const iconUrl = `${import.meta.env.BASE_URL}favicon.svg`;
 const store = useWorkspace();
 const transferOpen = ref(false),
-  comparison = ref(null),
-  analysisRegionId = ref(null);
+  comparison = ref(null);
 const compareRegion = computed(() =>
   store.regions.find((r) => r.id === comparison.value?.regionId),
 );
@@ -22,7 +21,6 @@ const observation = computed(
       (o) => o.id === comparison.value?.observationId,
     ),
 );
-const analysisRegion = computed(() => store.regions.find((r) => r.id === analysisRegionId.value));
 </script>
 
 <template>
@@ -51,7 +49,10 @@ const analysisRegion = computed(() => store.regions.find((r) => r.id === analysi
         街道定位</button
       ><span class="basemap-note">提供方当前版本</span>
     </div>
-    <main class="workspace-panels"><div class="left-panels"><CapturePanel /></div><RegionPanel @compare="comparison = $event" @analysis="analysisRegionId = $event" /></main>
+    <main class="workspace-panels">
+      <div class="left-panels"><CapturePanel /></div>
+      <div class="right-panels"><RegionPanel @compare="comparison = $event" /><ModelPanel /></div>
+    </main>
     <div class="map-caption">
       <span class="crosshair-mark">＋</span>
       <div>在空间中选取<span>在时间中探索</span></div>
@@ -69,6 +70,5 @@ const analysisRegion = computed(() => store.regions.find((r) => r.id === analysi
       @close="comparison = null"
     />
     <TransferDialog v-if="transferOpen" @close="transferOpen = false" />
-    <ModelResultDialog v-if="analysisRegion?.analysis.result" :region="analysisRegion" @close="analysisRegionId = null" />
   </div>
 </template>

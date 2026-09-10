@@ -31,6 +31,19 @@ const closest = history.closest;
 
 首次截取还会经同源 `/api/poi` 查询周边描述，结果保存在 `region.poi`。Vercel 项目必须配置服务器环境变量 `AMAP_API_KEY`；该值不属于前端环境变量，不能以 `VITE_` 开头。
 
+## Agnes 模型模拟接口
+
+默认模型入口是同源 `POST /api/agnes`。它只在 Vercel 服务端读取 `AGNES_API_KEY`，浏览器请求体包含 base64 历史 PNG、POI 数据、影像元数据和用户编辑的提示词。代理调用 Agnes 的 OpenAI 兼容 `/v1/chat/completions`，并将模型回答适配为原有 `analysis.result`。
+
+```js
+await window.terrachron.analyzeChange({
+  regionId: region.id,
+  prompt: '判断历史影像和当前 POI 是否反映地表变化；仅返回 JSON。',
+});
+```
+
+区域卡片只负责选择区域和历史影像；`03 / MODEL` 浮窗显示输入、请求状态和结果。模型返回的顶层 `changed`、`before_type`、`after_type`、`description`、`confidence` 与 `findings` 会映射为变化结论。服务端未配置 Key 时返回明确的 `AGNES_API_KEY` 配置错误。
+
 ## 本地模型变化检测接口
 
 模型服务由甲方在本地部署，前端不保存模型 URL 以外的凭据。设置 `VITE_MODEL_API_BASE` 后，区域卡片中的“模型变化检测”会调用 `${VITE_MODEL_API_BASE}/analyze`；未设置时按钮保持禁用。
@@ -47,14 +60,14 @@ const analysis = await api.analyzeChange({
 
 请求为 `multipart/form-data`，字段与甲方 V1.0 文档一致：
 
-| 字段 | 内容 |
-| --- | --- |
-| `image` | 已选择历史记录的 PNG 文件 |
-| `poi_data` | `{ pois: [...] }`；包含当前区域地址、POI 原始上下文和来源信息 |
-| `image_meta` | `bbox: [minLon, minLat, maxLon, maxLat]`、`crs: EPSG:4326`、历史拍摄日期、来源和 0.5 m/pixel 采样间距 |
-| `task_type` | 默认 `comprehensive`，可改为服务端支持的任务 |
-| `result_format` | `json` 或 `markdown` |
-| `options` | 中文输出、置信度、区域和 POI 分析开关 |
+| 字段            | 内容                                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| `image`         | 已选择历史记录的 PNG 文件                                                                             |
+| `poi_data`      | `{ pois: [...] }`；包含当前区域地址、POI 原始上下文和来源信息                                         |
+| `image_meta`    | `bbox: [minLon, minLat, maxLon, maxLat]`、`crs: EPSG:4326`、历史拍摄日期、来源和 0.5 m/pixel 采样间距 |
+| `task_type`     | 默认 `comprehensive`，可改为服务端支持的任务                                                          |
+| `result_format` | `json` 或 `markdown`                                                                                  |
+| `options`       | 中文输出、置信度、区域和 POI 分析开关                                                                 |
 
 成功响应必须为 `{ code: 0, request_id, data }`。`data.result_format === 'markdown'` 时前端保留报告文本；JSON 结果显示摘要和 findings。只有模型明确返回 `data.result.change` 时，前端才显示“是否变化”“变化前类型”和“变化后类型”；通用分析结果不会被前端擅自解释为变化结论。
 

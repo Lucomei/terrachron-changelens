@@ -69,6 +69,20 @@ Environments: Production、Preview、Development
 
 保存后到 **Deployments** 对最新部署执行 **Redeploy**。本地需要经 Vercel Functions 调试时，使用 `vercel dev` 并在本机环境中设置同名变量；`npm run dev` 只启动 Vite 页面，不会启动 `/api/poi`。
 
+## Agnes 模型模拟链路
+
+区域影像库下方的 `03 / MODEL` 浮窗始终跟随当前选中的区域。取得历史影像后，浮窗会带入该图、当前 POI 描述和 WGS84 范围；可以编辑分析提示词，再发送请求。返回的变化结论、类型、置信度和发现直接显示在此浮窗，不会被区域库裁切。
+
+Agnes Key 由 Vercel 的 `/api/agnes` 服务端函数读取，浏览器不会收到 Key。在 Vercel 项目 **Settings → Environment Variables** 新建：
+
+```text
+Name: AGNES_API_KEY
+Value: 你的 Agnes API Key
+Environments: Production、Preview、Development
+```
+
+保存后对最新部署执行 **Redeploy**。代理使用 `agnes-2.5-flash` 的 OpenAI 兼容聊天接口，将历史影像以 data URL、POI、影像元数据和可编辑提示词传给模型，并要求返回结构化 JSON。不要使用 `VITE_` 前缀，也不要把 Key 填入 `.env.local` 后提交。
+
 ## 对外接口
 
 宿主页面可调用 `window.terrachron`，其他 Vue 项目可以导入 `createTerraChronApi(pinia)`。详细参数、返回值及接收端示例见 [docs/api.md](docs/api.md)。

@@ -17,6 +17,7 @@ export function createTerraChronApi(
       createLocal: (baseUrl) => createModelClient({ baseUrl }),
       createAgnes: () => createAgnesClient(),
     }),
+    historyPoiLookup = async () => null,
   } = {},
 ) {
   const store = useWorkspace(pinia);
@@ -113,11 +114,17 @@ export function createTerraChronApi(
     const observation = region.history.closest?.observation;
     if (!observation) throw new Error('请先获取一张历史影像');
     const asset = await getImageAsset({ regionId, observationId: observation.id, signal });
+    const currentAsset = await getImageAsset({ regionId, signal });
+    const historicalPoiData = await historyPoiLookup({ region, observation, signal }).catch(
+      () => null,
+    );
     await store.analyzeRegion(regionId, async (ownedRegion, { signal: jobSignal }) => {
       const response = await modelClient.analyzeChange({
         image: asset.blob,
+        currentImage: currentAsset.blob,
         filename: `${ownedRegion.id}_${observation.capturedAt || 'historical'}.png`,
         poiData: poiDataFor(ownedRegion),
+        ...(historicalPoiData ? { historicalPoiData } : {}),
         imageMeta: {
           bbox: ownedRegion.bbox,
           crs: 'EPSG:4326',
@@ -125,6 +132,14 @@ export function createTerraChronApi(
           source: observation.providerId || 'esri-wayback',
           gsd: ownedRegion.sizeMeters / ownedRegion.outputSize,
           properties: { region_id: ownedRegion.id, historical_release_id: observation.releaseId },
+        },
+        currentImageMeta: {
+          bbox: ownedRegion.bbox,
+          crs: 'EPSG:4326',
+          acquired_at: ownedRegion.latest.snapshotAt || null,
+          source: ownedRegion.latest.source || 'esri-current',
+          gsd: ownedRegion.sizeMeters / ownedRegion.outputSize,
+          properties: { region_id: ownedRegion.id, image_role: 'current' },
         },
         taskType,
         resultFormat,

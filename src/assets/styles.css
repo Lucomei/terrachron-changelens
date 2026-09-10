@@ -2030,3 +2030,18 @@ img {
     max-height: 310px;
   }
 }
+.right-panels > .panel-slot {
+  width: 360px;
+  max-width: calc(100vw - 16px);
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
+.right-panels > .panel-slot > .panel {
+  width: 100%;
+}
+@media (max-width: 899px) {
+  .right-panels > .panel-slot {
+    width: 100%;
+    max-width: none;
+  }
+}

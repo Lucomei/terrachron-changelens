@@ -21,8 +21,10 @@ test('sends a historical image, POI context and the authored prompt to the same-
     },
   });
   await client.analyzeChange({
-    image: new Blob(['png'], { type: 'image/png' }),
+    image: new Blob(['historical'], { type: 'image/png' }),
+    currentImage: new Blob(['current'], { type: 'image/png' }),
     filename: 'region-01.png',
+    currentFilename: 'region-01-current.png',
     poiData: { pois: [{ name: '外滩', address: '上海市黄浦区' }] },
     imageMeta: { bbox: [121.47, 31.23, 121.48, 31.24], acquired_at: '2019-11-09' },
     prompt: '请返回 JSON',
@@ -31,7 +33,9 @@ test('sends a historical image, POI context and the authored prompt to the same-
   assert.equal(request.init.method, 'POST');
   const payload = JSON.parse(request.init.body);
   assert.equal(payload.image.mimeType, 'image/png');
-  assert.equal(payload.image.base64, 'cG5n');
+  assert.equal(payload.image.base64, 'aGlzdG9yaWNhbA==');
+  assert.equal(payload.currentImage.base64, 'Y3VycmVudA==');
+  assert.equal(payload.currentImage.filename, 'region-01-current.png');
   assert.equal(payload.poiData.pois[0].name, '外滩');
   assert.equal(payload.imageMeta.acquired_at, '2019-11-09');
   assert.equal(payload.prompt, '请返回 JSON');

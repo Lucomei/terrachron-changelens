@@ -21,8 +21,13 @@ export function useDraggable(panel, handle) {
         78,
         Math.min(window.innerHeight - 90, bounds.top + e.clientY - start[1]),
       );
+      const slot = element.parentElement?.classList.contains('panel-slot')
+        ? element.parentElement
+        : null;
+      if (slot) slot.style.minHeight = `${bounds.height}px`;
       Object.assign(element.style, {
         position: 'fixed',
+        width: `${bounds.width}px`,
         left: `${left}px`,
         top: `${top}px`,
         right: 'auto',

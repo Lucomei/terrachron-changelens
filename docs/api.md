@@ -33,7 +33,7 @@ const closest = history.closest;
 
 ## Agnes 模型模拟接口
 
-默认模型入口是同源 `POST /api/agnes`。它只在 Vercel 服务端读取 `AGNES_API_KEY`，浏览器请求体包含 base64 历史 PNG、POI 数据、影像元数据和用户编辑的提示词。代理调用 Agnes 的 OpenAI 兼容 `/v1/chat/completions`，并将模型回答适配为原有 `analysis.result`。
+默认模型入口是同源 `POST /api/agnes`。它只在 Vercel 服务端读取 `AGNES_API_KEY`，浏览器请求体包含带身份的 base64 历史 PNG 与最新 PNG、最新 POI、影像元数据和用户编辑的提示词。代理调用 Agnes 的 OpenAI 兼容 `/v1/chat/completions`，并将模型回答适配为原有 `analysis.result`。
 
 ```js
 await window.terrachron.analyzeChange({
@@ -187,3 +187,7 @@ async def receive(
 ```
 
 `api.getRegions()` 获取当前区域列表（id、名称、颜色、中心、GeoJSON 范围）。`src/services/history.js` 和 `src/services/transfer.js` 也可独立导入；第三方影像适配器实现 `id/label/discover/metadata`，记录提供对应的瓦片模板。
+
+### 可选历史 POI 接入
+
+createTerraChronApi(pinia, { historyPoiLookup }) 可注入历史 POI 查询函数。它收到 { region, observation, signal }，返回 POI 数据对象时随模型请求传递；返回空值或抛错时前端不发送历史 POI，绝不以当前 POI 冒充历史信息。

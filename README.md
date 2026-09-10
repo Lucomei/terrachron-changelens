@@ -81,7 +81,7 @@ Value: 你的 Agnes API Key
 Environments: Production、Preview、Development
 ```
 
-保存后对最新部署执行 **Redeploy**。代理使用 `agnes-2.5-flash` 的 OpenAI 兼容聊天接口，将历史影像以 data URL、POI、影像元数据和可编辑提示词传给模型，并要求返回结构化 JSON。不要使用 `VITE_` 前缀，也不要把 Key 填入 `.env.local` 后提交。
+保存后对最新部署执行 **Redeploy**。代理使用 `agnes-2.5-flash` 的 OpenAI 兼容聊天接口，将带有身份标记的历史影像和最新影像、最新 POI、影像元数据及可编辑提示词传给模型，并要求返回结构化 JSON。历史 POI 仅由可选 `historyPoiLookup` 接入点返回时附带；未配置、查无结果或失败都会省略该字段。不要使用 `VITE_` 前缀，也不要把 Key 填入 `.env.local` 后提交。
 
 ## 对外接口
 

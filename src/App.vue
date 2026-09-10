@@ -51,7 +51,10 @@ const observation = computed(
     </div>
     <main class="workspace-panels">
       <div class="left-panels"><CapturePanel /></div>
-      <div class="right-panels"><RegionPanel @compare="comparison = $event" /><ModelPanel /></div>
+      <div class="right-panels">
+        <div class="panel-slot"><RegionPanel @compare="comparison = $event" /></div>
+        <div class="panel-slot"><ModelPanel /></div>
+      </div>
     </main>
     <div class="map-caption">
       <span class="crosshair-mark">＋</span>

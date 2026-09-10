@@ -1899,7 +1899,9 @@ img {
   pointer-events: auto;
 }
 .right-panels .region-panel {
-  width: 100%;
+  width: 360px;
+  max-width: calc(100vw - 16px);
+  flex: 0 0 auto;
 }
 .model-panel {
   width: 360px;
@@ -2007,6 +2009,10 @@ img {
   overflow: auto;
 }
 @media (max-width: 899px) {
+  .right-panels .region-panel {
+    width: 100%;
+    max-width: none;
+  }
   .right-panels {
     width: 100%;
     max-height: none;

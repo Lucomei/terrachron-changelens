@@ -42,7 +42,7 @@ await window.terrachron.analyzeChange({
 });
 ```
 
-区域卡片只负责选择区域和历史影像；`03 / MODEL` 浮窗显示输入、请求状态和结果。模型返回的顶层 `changed`、`before_type`、`after_type`、`description`、`confidence` 与 `findings` 会映射为变化结论。服务端未配置 Key 时返回明确的 `AGNES_API_KEY` 配置错误。
+区域卡片只负责选择区域和历史影像；`03 / MODEL` 浮窗显示输入、请求状态和结果。设置 `VITE_MODEL_API_BASE` 时，模型客户端优先切换至甲方本地 `/analyze`；空值时使用 Agnes 代理。模型返回的顶层 `changed`、`before_type`、`after_type`、`description`、`confidence` 与 `findings` 会映射为变化结论。服务端未配置 Key 时返回明确的 `AGNES_API_KEY` 配置错误。
 
 ## 本地模型变化检测接口
 

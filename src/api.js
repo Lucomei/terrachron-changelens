@@ -4,10 +4,21 @@ import { searchClosestHistory, searchHistory } from './services/history.js';
 import { historyProviders } from './services/providers/esri.js';
 import { fetchPoiDescription } from './services/poi.js';
 import { createAgnesClient } from './services/agnes-client.js';
+import { createModelClient } from './services/model-client.js';
+import { chooseModelClient } from './services/model-choice.js';
 import { normalizeModelResult } from './services/change-result.js';
 
 /** Public API factory. All component and external operations use the same boundary. */
-export function createTerraChronApi(pinia, { modelClient = createAgnesClient() } = {}) {
+export function createTerraChronApi(
+  pinia,
+  {
+    modelClient = chooseModelClient({
+      localBaseUrl: import.meta.env?.VITE_MODEL_API_BASE || '',
+      createLocal: (baseUrl) => createModelClient({ baseUrl }),
+      createAgnes: () => createAgnesClient(),
+    }),
+  } = {},
+) {
   const store = useWorkspace(pinia);
   const regionById = (id) => {
     const region = store.regions.find((r) => r.id === id);

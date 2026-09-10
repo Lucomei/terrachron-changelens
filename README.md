@@ -73,7 +73,7 @@ Environments: Production、Preview、Development
 
 区域影像库下方的 `03 / MODEL` 浮窗始终跟随当前选中的区域。取得历史影像后，浮窗会带入该图、当前 POI 描述和 WGS84 范围；可以编辑分析提示词，再发送请求。返回的变化结论、类型、置信度和发现直接显示在此浮窗，不会被区域库裁切。
 
-Agnes Key 由 Vercel 的 `/api/agnes` 服务端函数读取，浏览器不会收到 Key。在 Vercel 项目 **Settings → Environment Variables** 新建：
+默认使用 Agnes Key 由 Vercel 的 `/api/agnes` 服务端函数读取，浏览器不会收到 Key。若甲方在本地部署模型，在构建前设置 `VITE_MODEL_API_BASE=http://127.0.0.1:8000/api/v1`，前端会优先调用该本地模型的 `/analyze`，保留原有 multipart 图像、POI 和元数据契约。在 Vercel 项目 **Settings → Environment Variables** 新建：
 
 ```text
 Name: AGNES_API_KEY

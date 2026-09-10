@@ -125,6 +125,13 @@ test('region card loads POI then retrieves the closest historical image for a ti
   await expect(modelPanel).toBeVisible();
   await expect(modelPanel).toContainText('历史影像 · 2020-06-01');
   await expect(modelPanel).toContainText('和平饭店');
+  const modelBeforeDrag = await modelPanel.boundingBox();
+  await modelPanel.locator('.panel-heading').hover();
+  await page.mouse.down();
+  await page.mouse.move(modelBeforeDrag.x - 90, modelBeforeDrag.y + 80);
+  await page.mouse.up();
+  const modelAfterDrag = await modelPanel.boundingBox();
+  expect(modelAfterDrag.width).toBeLessThanOrEqual(380);
   await expect(modelPanel.getByRole('button', { name: '发送模型请求' })).toBeEnabled();
   await modelPanel.getByRole('button', { name: '发送模型请求' }).click();
   await expect(modelPanel).toContainText('检测到变化');

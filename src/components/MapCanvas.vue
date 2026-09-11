@@ -37,9 +37,9 @@ function draw() {
   try {
     if (!draftIsCaptured || store.pickMode)
       regions.push({
-        ...createFootprint(store.draftCenter),
+        ...createFootprint(store.draftCenter, store.draftSpec),
         id: 'draft',
-        name: '256 × 256 m',
+        name: store.draftSpec.sizeMeters + ' × ' + store.draftSpec.sizeMeters + ' m',
         color: '#ffffff',
       });
   } catch {
@@ -106,6 +106,7 @@ watch(
     store.regions.map((r) => [r.id, r.visible, r.color]),
     store.activeId,
     store.draftCenter,
+    store.draftSpec,
     store.pickMode,
   ],
   draw,

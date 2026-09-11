@@ -27,8 +27,8 @@ export function createTerraChronApi(
     return region;
   };
 
-  async function createRegion({ center }) {
-    const region = store.addRegion(center);
+  async function createRegion({ center, sizeMeters, outputSize }) {
+    const region = store.addRegion(center, { sizeMeters, outputSize });
     await store.captureLatest(region.id, (r, options) => cropImagery(r, null, options));
     await store.loadPoi(region.id, (r, options) => fetchPoiDescription(r.center, options));
     return region;

@@ -96,8 +96,13 @@ test('region card loads POI then retrieves the closest historical image for a ti
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'TerraChron' })).toBeVisible();
+  await page.getByLabel('地面范围（米）').fill('400');
+  await page.getByLabel('输出像素').fill('800');
+  await page.getByLabel('输出像素').press('Tab');
+  await expect(page.getByText('每像素 0.25 m²')).toBeVisible();
   await page.getByRole('button', { name: '截取并加入区域库' }).click();
   await expect(page.getByTestId('poi-description')).toContainText('和平饭店');
+  await expect(page.getByText('400 m × 400 m · 800 px')).toBeVisible();
   const library = page.getByTestId('region-panel');
   const libraryBox = await library.boundingBox();
   expect(libraryBox.x).toBeGreaterThan(900);

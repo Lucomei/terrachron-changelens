@@ -62,7 +62,9 @@ const observation = computed(
     </div>
     <footer class="app-footer">
       <span
-        ><i class="status-dot"></i> WGS84 <span class="footer-divider">/</span> 256 m × 256 m</span
+        ><i class="status-dot"></i> WGS84 <span class="footer-divider">/</span>
+        {{ store.activeRegion?.sizeMeters || store.draftSpec.sizeMeters }} m ×
+        {{ store.activeRegion?.sizeMeters || store.draftSpec.sizeMeters }} m</span
       ><span>当前底图为最新发布版本，非实时拍摄</span>
     </footer>
     <CompareDialog

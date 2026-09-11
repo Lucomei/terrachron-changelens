@@ -59,7 +59,7 @@ onBeforeUnmount(() => {
       <span v-else class="thumb-placeholder" :class="{ loading }">{{
         loading ? '加载历史影像…' : error ? '预览加载失败' : '历史影像'
       }}</span>
-      <span class="image-corner">256 m</span>
+      <span class="image-corner">{{ region.sizeMeters }} m</span>
     </button>
     <div class="observation-info">
       <label class="observation-date"

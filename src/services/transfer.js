@@ -22,7 +22,12 @@ export async function createPackage(selections, loadAsset, { signal, onProgress 
       sizeMeters: region.sizeMeters,
       outputSize: region.outputSize,
       pixelProjection: region.projection,
-      localExtent: [-128, -128, 128, 128],
+      localExtent: [
+        -region.sizeMeters / 2,
+        -region.sizeMeters / 2,
+        region.sizeMeters / 2,
+        region.sizeMeters / 2,
+      ],
       queryRange: { ...region.range },
     });
     for (const observation of [null, ...observations]) {

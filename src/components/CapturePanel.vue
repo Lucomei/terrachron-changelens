@@ -1,5 +1,5 @@
 <script setup>
-import { inject, ref, watch } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import { useWorkspace } from '../stores/workspace.js';
 import { createFootprint } from '../domain/geometry.js';
 import { useDraggable } from '../composables/useDraggable.js';
@@ -7,11 +7,22 @@ const store = useWorkspace();
 const api = inject('terrachron');
 const longitude = ref(String(store.draftCenter[0]));
 const latitude = ref(String(store.draftCenter[1]));
-const error = ref('');
-const busy = ref(false);
-const panel = ref(null),
+const sizeMeters = ref(String(store.draftSpec.sizeMeters));
+const outputSize = ref(String(store.draftSpec.outputSize));
+const error = ref(''),
+  busy = ref(false),
+  panel = ref(null),
   handle = ref(null);
 useDraggable(panel, handle);
+const pixelArea = computed(() => {
+  const side = Number(sizeMeters.value) / Number(outputSize.value);
+  return Number.isFinite(side) ? side * side : NaN;
+});
+const areaLabel = computed(() =>
+  Number.isFinite(pixelArea.value)
+    ? `${pixelArea.value.toLocaleString('zh-CN', { maximumFractionDigits: 4 })} m²`
+    : '—',
+);
 watch(
   () => store.draftCenter,
   (center) => {
@@ -19,13 +30,20 @@ watch(
     latitude.value = String(center[1]);
   },
 );
+function specification() {
+  const spec = { sizeMeters: Number(sizeMeters.value), outputSize: Number(outputSize.value) };
+  createFootprint(store.draftCenter, spec);
+  store.draftSpec = spec;
+  return spec;
+}
 function locate() {
   if (!longitude.value.trim() || !latitude.value.trim()) throw new Error('请填写经度和纬度');
   const center = [Number(longitude.value), Number(latitude.value)];
-  createFootprint(center);
+  const spec = specification();
+  createFootprint(center, spec);
   store.draftCenter = center;
   store.focusRequest++;
-  return center;
+  return { center, spec };
 }
 function preview() {
   error.value = '';
@@ -38,9 +56,9 @@ function preview() {
 async function capture() {
   error.value = '';
   try {
-    const center = locate();
+    const { center, spec } = locate();
     busy.value = true;
-    await api.createRegion({ center });
+    await api.createRegion({ center, ...spec });
   } catch (e) {
     error.value = e.message;
   } finally {
@@ -84,11 +102,38 @@ async function capture() {
           {{ store.pickMode ? '取消地图选点' : '⌖ 地图选点' }}
         </button>
       </div>
+      <div class="capture-settings">
+        <label
+          >地面范围 <span>METERS</span
+          ><input
+            v-model="sizeMeters"
+            aria-label="地面范围（米）"
+            type="number"
+            min="32"
+            max="2048"
+            step="1"
+            @change="preview"
+          /><small>正方形边长 · 32–2048 m</small></label
+        >
+        <label
+          >输出像素 <span>PIXELS</span
+          ><input
+            v-model="outputSize"
+            aria-label="输出像素"
+            type="number"
+            min="64"
+            max="2048"
+            step="1"
+            @change="preview"
+          /><small>正方形边长 · 64–2048 px</small></label
+        >
+      </div>
       <div class="capture-spec">
         <span class="sample-square"></span>
         <div>
-          <strong>256 × 256 <small>m</small></strong
-          ><span>地面范围 · 512 × 512 px</span>
+          <strong>{{ sizeMeters }} × {{ sizeMeters }} <small>m</small></strong
+          ><span>地面范围 · {{ outputSize }} × {{ outputSize }} px</span
+          ><span>每像素 {{ areaLabel }}</span>
         </div>
         <span class="tag current">最新</span>
       </div>

@@ -26,13 +26,14 @@ export const useWorkspace = defineStore('workspace', () => {
   const basemap = ref('esri');
   const pickMode = ref(false);
   const draftCenter = ref([121.4737, 31.2304]);
+  const draftSpec = ref({ sizeMeters: 256, outputSize: 512 });
   const focusRequest = ref(0);
   const activeRegion = computed(() => regions.value.find((r) => r.id === activeId.value) || null);
   const jobs = new Map();
   let sequence = 0;
 
-  function addRegion(center) {
-    const footprint = createFootprint(center);
+  function addRegion(center, options = draftSpec.value) {
+    const footprint = createFootprint(center, options);
     const number = ++sequence;
     const region = {
       ...footprint,
@@ -100,7 +101,8 @@ export const useWorkspace = defineStore('workspace', () => {
       Object.assign(region.history, result, { status: 'ready', queryRange: queryInput });
       const ids = new Set([...result.observations, ...result.unknown].map((r) => r.id));
       region.checkedIds = region.checkedIds.filter((id) => ids.has(id));
-      region.selectedObservationId = result.closest?.observation?.id || result.observations[0]?.id || null;
+      region.selectedObservationId =
+        result.closest?.observation?.id || result.observations[0]?.id || null;
       if (region.selectedObservationId) region.checkedIds = [region.selectedObservationId];
     } catch (error) {
       if (!controller.signal.aborted)
@@ -195,6 +197,7 @@ export const useWorkspace = defineStore('workspace', () => {
     basemap,
     pickMode,
     draftCenter,
+    draftSpec,
     focusRequest,
     addRegion,
     removeRegion,

@@ -43,8 +43,9 @@ export async function cropImagery(region, observation = null, { signal } = {}) {
   const ctx = output.getContext('2d');
   const raster = ctx.createImageData(output.width, output.height);
   const inverse = proj4(region.projection, 'EPSG:4326');
-  // Reproject every output pixel from the local ground-meter grid to the source mosaic.
+  // Reproject every output pixel from the region's local ground-meter grid to the source mosaic.
   // This avoids latitude-dependent distances and stretching a geographic bounding box.
+  const half = region.sizeMeters / 2;
   for (let row = 0; row < output.height; row++) {
     if (row % 64 === 0) {
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -52,8 +53,8 @@ export async function cropImagery(region, observation = null, { signal } = {}) {
     }
     for (let col = 0; col < output.width; col++) {
       const ground = [
-        ((col + 0.5) / output.width) * 256 - 128,
-        128 - ((row + 0.5) / output.height) * 256,
+        ((col + 0.5) / output.width) * region.sizeMeters - half,
+        half - ((row + 0.5) / output.height) * region.sizeMeters,
       ];
       const [px, py] = worldPixel(inverse.forward(ground), coverage.zoom);
       const x = Math.floor(px - coverage.minX * 256),

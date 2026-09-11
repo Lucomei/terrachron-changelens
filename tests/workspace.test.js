@@ -76,3 +76,11 @@ test('a model analysis result stays with the region that submitted it', async ()
   assert.equal(a.analysis.result.requestId, 'req_a');
   assert.equal(b.analysis.status, 'idle');
 });
+
+test('a custom capture specification remains owned by its region', () => {
+  setActivePinia(createPinia());
+  const store = useWorkspace();
+  const region = store.addRegion([121.47, 31.23], { sizeMeters: 400, outputSize: 800 });
+  assert.equal(region.sizeMeters, 400);
+  assert.equal(region.outputSize, 800);
+});

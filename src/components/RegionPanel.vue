@@ -95,7 +95,10 @@ function showPoiTooltip(event, region) {
               ><i class="color-dot" :style="{ background: region.color }"></i
               >{{ region.name }}</strong
             ><span>{{ region.center[0].toFixed(4) }}°, {{ region.center[1].toFixed(4) }}°</span
-            ><small>256 m × 256 m <b>历史候选</b></small></span
+            ><small
+              >{{ region.sizeMeters }} m × {{ region.sizeMeters }} m · {{ region.outputSize }} px
+              <b>历史候选</b></small
+            ></span
           >
         </button>
         <div class="region-actions">

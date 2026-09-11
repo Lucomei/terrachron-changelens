@@ -26,7 +26,8 @@ watch(items, () => {
             历史影像
           </h2>
           <p class="modal-subtitle">
-            {{ region.center[0].toFixed(6) }}°, {{ region.center[1].toFixed(6) }}° · 256 m × 256 m ·
+            {{ region.center[0].toFixed(6) }}°, {{ region.center[1].toFixed(6) }}° ·
+            {{ region.sizeMeters }} m × {{ region.sizeMeters }} m · {{ region.outputSize }} px ·
             {{ region.history.queryRange.startDate }} — {{ region.history.queryRange.endDate }}
           </p>
         </div>

@@ -6,13 +6,17 @@
 
 ```js
 const api = window.terrachron;
-const region = await api.createRegion({ center: [121.4737, 31.2304] });
+const region = await api.createRegion({
+  center: [121.4737, 31.2304],
+  sizeMeters: 400,
+  outputSize: 800,
+});
 if (region.latest.status !== 'ready') throw new Error(region.latest.error);
 const current = await api.getImageAsset({ regionId: region.id });
 // current.blob: image/png Blob；current.url: 仅此页面有效的预览 URL。
 ```
 
-`center` 是 `[经度, 纬度]`，WGS84。固定地面尺寸 256 米、512 像素输出；无任意尺寸参数。`createRegion` 返回区域状态，包括 id、名称、颜色、中心、GeoJSON 边界、投影、范围、最新截取和历史状态。创建时坐标非法会抛错，网络截取错误记录在 `latest.status/error`，便于保留区域重试。
+`center` 是 `[经度, 纬度]`，WGS84。`sizeMeters` 与 `outputSize` 均为正方形边长；默认 256 m 与 512 px，可分别设置为 32–2048 m、64–2048 px 的整数。每像素地面面积为 `(sizeMeters / outputSize)²` m²。`createRegion` 返回区域状态，包括 id、名称、颜色、中心、GeoJSON 边界、投影、范围、最新截取和历史状态。创建时坐标非法会抛错，网络截取错误记录在 `latest.status/error`，便于保留区域重试。
 
 `await api.refreshLatest(regionId)` 重试或刷新当前截取，历史结果不变。`api.cancel(regionId, 'latest')` 取消截取。
 

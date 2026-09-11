@@ -7,6 +7,36 @@ export const ESRI_ATTRIBUTION = 'Esri, Vantor, Earthstar Geographics, and the GI
 const CATALOG = 'https://s3-us-west-2.amazonaws.com/config.maptiles.arcgis.com/waybackconfig.json';
 const WAYBACK = 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer';
 
+export const HISTORY_FULL_SCAN_MAX_METERS = 512;
+export const HISTORY_SAMPLE_MAX_TILES = 25;
+
+// Wayback discovery is a catalog lookup, not image processing. Scanning every
+// tile of a large footprint multiplies archive requests with little benefit for
+// choosing candidate releases. The 512 m boundary keeps normal work exact;
+// larger ranges use a deterministic, bounded grid across the entire footprint.
+export function coverageSamples(coverage, maxTiles = 9) {
+  if (coverage.tiles.length <= maxTiles) return coverage.tiles;
+  const side = Math.ceil(Math.sqrt(maxTiles));
+  const pick = (start, end) =>
+    [...new Set(Array.from({ length: side }, (_, index) =>
+      Math.round(start + ((end - start) * index) / (side - 1)),
+    ))];
+  const xs = pick(coverage.minX, coverage.maxX);
+  const ys = pick(coverage.minY, coverage.maxY);
+  const byCoordinate = new Map(coverage.tiles.map((tile) => [`${tile.x}/${tile.y}`, tile]));
+  return [...new Map(
+    ys.flatMap((y) => xs.map((x) => byCoordinate.get(`${x}/${y}`)))
+      .filter(Boolean)
+      .map((tile) => [`${tile.x}/${tile.y}`, tile]),
+  ).values()];
+}
+
+export function historyCoverageSamples(region, coverage) {
+  if (region.sizeMeters <= HISTORY_FULL_SCAN_MAX_METERS) return coverage.tiles;
+  const side = Math.min(5, Math.max(3, Math.ceil(region.sizeMeters / HISTORY_FULL_SCAN_MAX_METERS) + 1));
+  return coverageSamples(coverage, Math.min(HISTORY_SAMPLE_MAX_TILES, side * side));
+}
+
 export function createEsriProvider(getJSON = jsonRequest) {
   let catalog = null;
   let catalogAt = 0;
@@ -36,10 +66,11 @@ export function createEsriProvider(getJSON = jsonRequest) {
     if (!all.length) throw new Error('历史版本目录为空');
     const indices = new Map(all.map((item, index) => [item.releaseId, index]));
     const coverage = tileCoverage(region);
+    const samples = historyCoverageSamples(region, coverage);
     const found = new Set();
     let done = 0;
     await mapConcurrent(
-      coverage.tiles,
+      samples,
       4,
       async (tile) => {
         let index = 0;
@@ -58,7 +89,14 @@ export function createEsriProvider(getJSON = jsonRequest) {
           found.add(selected);
           index = selectedIndex + 1;
         }
-        onProgress({ stage: '正在扫描区域覆盖', done: ++done, total: coverage.tiles.length });
+        onProgress({
+          stage:
+            region.sizeMeters <= HISTORY_FULL_SCAN_MAX_METERS
+              ? '正在完整扫描区域覆盖'
+              : '正在自适应抽样扫描区域覆盖',
+          done: ++done,
+          total: samples.length,
+        });
       },
       signal,
     );

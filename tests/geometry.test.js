@@ -18,7 +18,9 @@ test('256 ground meters remain 256 meters at equator and 60 degrees latitude', (
     }
     assert.equal(footprint.sizeMeters, 256);
     assert.equal(footprint.outputSize, recommendedOutputSize(center, 256));
-    assert.ok(tileCoverage(footprint).tiles.length <= 25);
+    // Source-driven 19th-level sampling uses more tiles at high latitudes,
+    // while a 256 m footprint remains a bounded, practical request.
+    assert.ok(tileCoverage(footprint).tiles.length <= 64);
   }
 });
 

@@ -78,9 +78,22 @@ export function pixelLonLat([x, y], zoom) {
   ];
 }
 export function tileCoverage(footprint) {
+  // Match the fetched Esri source grid to the generated raster.  For a small
+  // footprint this reaches level 19; when the 2048 px output safety cap is
+  // reached, a coarser level is the highest useful level instead of downloading
+  // hundreds of unused high-resolution tiles.
+  const desiredMetersPerPixel = footprint.sizeMeters / footprint.outputSize;
   const zoom = Math.min(
     CAPTURE_LIMITS.maxZoom,
-    Math.ceil(Math.log2((156543.033928 * Math.cos((footprint.center[1] * Math.PI) / 180)) / 0.5)),
+    Math.max(
+      0,
+      Math.ceil(
+        Math.log2(
+          (156543.033928 * Math.cos((footprint.center[1] * Math.PI) / 180)) /
+            desiredMetersPerPixel,
+        ),
+      ),
+    ),
   );
   const pixels = footprint.geometry.coordinates[0].map((point) => worldPixel(point, zoom));
   const minX = Math.floor(Math.min(...pixels.map((p) => p[0])) / 256),

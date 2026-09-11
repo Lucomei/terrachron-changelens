@@ -42,6 +42,13 @@ test('derives the raster size from the source resolution and ground range', () =
   assert.ok(Math.abs(getDistance(ring[0], ring[1]) - 400) < 1.5);
 });
 
+test('requests the highest Esri tile level that is useful for the output raster', () => {
+  const detailed = createFootprint([121.4737, 31.2304], { sizeMeters: 256 });
+  assert.equal(tileCoverage(detailed).zoom, 19);
+  const capped = createFootprint([121.4737, 31.2304], { sizeMeters: 2048 });
+  assert.ok(tileCoverage(capped).zoom < 19);
+});
+
 test('rejects impractical capture specifications', () => {
   assert.throws(() => createFootprint([121.47, 31.23], { sizeMeters: 16 }), /范围/);
   assert.throws(() => createFootprint([121.47, 31.23], { sizeMeters: 256, outputSize: 4096 }), /像素/);

@@ -8,16 +8,23 @@ const api = inject('terrachron');
 const longitude = ref(String(store.draftCenter[0]));
 const latitude = ref(String(store.draftCenter[1]));
 const sizeMeters = ref(String(store.draftSpec.sizeMeters));
-const outputSize = ref(String(store.draftSpec.outputSize));
 const error = ref(''),
   busy = ref(false),
   panel = ref(null),
   handle = ref(null);
 useDraggable(panel, handle);
 const pixelArea = computed(() => {
-  const side = Number(sizeMeters.value) / Number(outputSize.value);
+  const side = Number(sizeMeters.value) / Number(store.draftSpec.outputSize);
   return Number.isFinite(side) ? side * side : NaN;
 });
+const groundSamplingDistance = computed(
+  () => Number(sizeMeters.value) / Number(store.draftSpec.outputSize),
+);
+const resolutionLabel = computed(() =>
+  Number.isFinite(groundSamplingDistance.value)
+    ? `${groundSamplingDistance.value.toLocaleString('zh-CN', { maximumFractionDigits: 3 })} m/px`
+    : '—',
+);
 const areaLabel = computed(() =>
   Number.isFinite(pixelArea.value)
     ? `${pixelArea.value.toLocaleString('zh-CN', { maximumFractionDigits: 4 })} m²`
@@ -28,11 +35,19 @@ watch(
   (center) => {
     longitude.value = String(center[0]);
     latitude.value = String(center[1]);
+    // Ground sampling distance is latitude-dependent in the Web Mercator tile grid.
+    // Recalculate when the map supplies a new center as well as when range changes.
+    try {
+      const footprint = createFootprint(center, { sizeMeters: Number(sizeMeters.value) });
+      store.draftSpec = { sizeMeters: footprint.sizeMeters, outputSize: footprint.outputSize };
+    } catch {
+      // The coordinate fields retain the invalid value and show its error on explicit preview.
+    }
   },
 );
 function specification() {
-  const spec = { sizeMeters: Number(sizeMeters.value), outputSize: Number(outputSize.value) };
-  createFootprint(store.draftCenter, spec);
+  const footprint = createFootprint(store.draftCenter, { sizeMeters: Number(sizeMeters.value) });
+  const spec = { sizeMeters: footprint.sizeMeters, outputSize: footprint.outputSize };
   store.draftSpec = spec;
   return spec;
 }
@@ -115,25 +130,14 @@ async function capture() {
             @change="preview"
           /><small>正方形边长 · 32–2048 m</small></label
         >
-        <label
-          >输出像素 <span>PIXELS</span
-          ><input
-            v-model="outputSize"
-            aria-label="输出像素"
-            type="number"
-            min="64"
-            max="2048"
-            step="1"
-            @change="preview"
-          /><small>正方形边长 · 64–2048 px</small></label
-        >
       </div>
       <div class="capture-spec">
         <span class="sample-square"></span>
         <div>
           <strong>{{ sizeMeters }} × {{ sizeMeters }} <small>m</small></strong
-          ><span>地面范围 · {{ outputSize }} × {{ outputSize }} px</span
-          ><span>每像素 {{ areaLabel }}</span>
+          ><span
+            >地面范围 · {{ store.draftSpec.outputSize }} × {{ store.draftSpec.outputSize }} px</span
+          ><span>标称分辨率 {{ resolutionLabel }} · 每像素 {{ areaLabel }}</span>
         </div>
         <span class="tag current">最新</span>
       </div>
@@ -141,7 +145,7 @@ async function capture() {
         {{ busy ? '正在截取最新影像…' : '截取并加入区域库' }} <span v-if="!busy">＋</span>
       </button>
       <p v-if="error" role="alert" class="error">{{ error }}</p>
-      <p class="micro">采样源：Esri 当前卫星影像 · WGS84</p>
+      <p class="micro">采样源：Esri 当前卫星影像 · 最高可用第 19 级瓦片 · WGS84</p>
     </div>
   </section>
 </template>

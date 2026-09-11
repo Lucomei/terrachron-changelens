@@ -6,9 +6,36 @@ async function blobToBase64(blob) {
   return btoa(binary);
 }
 
+// The original PNG remains in the region library.  This is only the transport
+// copy sent to the serverless proxy: two large base64 PNGs can exceed Vercel's
+// request-body limit before the request ever reaches the Agnes API.
+async function modelTransportImage(blob) {
+  const maxSide = 1024;
+  if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return blob;
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const compressed = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    return compressed || blob;
+  } finally {
+    bitmap.close();
+  }
+}
+
 async function encodeImage(image, filename, role) {
   if (!(image instanceof Blob)) throw new Error(`缺少${role}`);
-  return { base64: await blobToBase64(image), mimeType: image.type || 'image/png', filename };
+  const transport = await modelTransportImage(image);
+  const isJpeg = transport.type === 'image/jpeg';
+  return {
+    base64: await blobToBase64(transport),
+    mimeType: transport.type || 'image/png',
+    filename: isJpeg ? filename.replace(/\.[^.]+$/, '.jpg') : filename,
+  };
 }
 
 export function createAgnesClient({ endpoint = '/api/agnes', fetchImpl = fetch } = {}) {

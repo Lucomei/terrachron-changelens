@@ -1,22 +1,29 @@
 import proj4 from 'proj4';
 
-export const CAPTURE_LIMITS = { minMeters: 32, maxMeters: 2048, minPixels: 64, maxPixels: 2048 };
+// Esri World Imagery is sampled from its highest supported, practical tile level.
+// The output count is derived from this source grid, rather than chosen by the user.
+export const CAPTURE_LIMITS = { minMeters: 32, maxMeters: 2048, maxPixels: 2048, maxZoom: 19 };
 
-function specification({ sizeMeters = 256, outputSize = 512 } = {}) {
-  const meters = Number(sizeMeters),
-    pixels = Number(outputSize);
+export function sourceGroundResolution(latitude, zoom = CAPTURE_LIMITS.maxZoom) {
+  return (156543.033928 * Math.cos((latitude * Math.PI) / 180)) / 2 ** zoom;
+}
+
+export function recommendedOutputSize(center, sizeMeters) {
+  const nativePixels = Math.ceil(sizeMeters / sourceGroundResolution(center[1]));
+  return Math.min(CAPTURE_LIMITS.maxPixels, nativePixels);
+}
+
+function specification(center, { sizeMeters = 256, outputSize } = {}) {
+  const meters = Number(sizeMeters);
   if (
     !Number.isInteger(meters) ||
     meters < CAPTURE_LIMITS.minMeters ||
     meters > CAPTURE_LIMITS.maxMeters
   )
     throw new Error(`范围须为 ${CAPTURE_LIMITS.minMeters} 至 ${CAPTURE_LIMITS.maxMeters} 米的整数`);
-  if (
-    !Number.isInteger(pixels) ||
-    pixels < CAPTURE_LIMITS.minPixels ||
-    pixels > CAPTURE_LIMITS.maxPixels
-  )
-    throw new Error(`像素须为 ${CAPTURE_LIMITS.minPixels} 至 ${CAPTURE_LIMITS.maxPixels} 的整数`);
+  const pixels = outputSize == null ? recommendedOutputSize(center, meters) : Number(outputSize);
+  if (!Number.isInteger(pixels) || pixels < 1 || pixels > CAPTURE_LIMITS.maxPixels)
+    throw new Error(`自动输出像素须在 1 至 ${CAPTURE_LIMITS.maxPixels} 之间`);
   return { sizeMeters: meters, outputSize: pixels };
 }
 
@@ -26,7 +33,7 @@ export function createFootprint(center, options = {}) {
   const [lng, lat] = center;
   if (Math.abs(lng) > 180 || Math.abs(lat) > 75)
     throw new Error('经度须在 -180° 至 180°，纬度须在 -75° 至 75°');
-  const { sizeMeters, outputSize } = specification(options);
+  const { sizeMeters, outputSize } = specification(center, options);
   const half = sizeMeters / 2;
   const projection = `+proj=tmerc +lat_0=${lat} +lon_0=${lng} +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs`;
   const transform = proj4(projection, 'EPSG:4326');
@@ -72,7 +79,7 @@ export function pixelLonLat([x, y], zoom) {
 }
 export function tileCoverage(footprint) {
   const zoom = Math.min(
-    19,
+    CAPTURE_LIMITS.maxZoom,
     Math.ceil(Math.log2((156543.033928 * Math.cos((footprint.center[1] * Math.PI) / 180)) / 0.5)),
   );
   const pixels = footprint.geometry.coordinates[0].map((point) => worldPixel(point, zoom));

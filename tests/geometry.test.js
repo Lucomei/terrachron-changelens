@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getDistance } from 'ol/sphere.js';
-import { createFootprint, tileCoverage } from '../src/domain/geometry.js';
+import { createFootprint, recommendedOutputSize, tileCoverage } from '../src/domain/geometry.js';
 
 test('256 ground meters remain 256 meters at equator and 60 degrees latitude', () => {
   for (const center of [
@@ -17,7 +17,7 @@ test('256 ground meters remain 256 meters at equator and 60 degrees latitude', (
       assert.ok(Math.abs(getDistance(ring[i], ring[i + 1]) - 256) < 1.5);
     }
     assert.equal(footprint.sizeMeters, 256);
-    assert.equal(footprint.outputSize, 512);
+    assert.equal(footprint.outputSize, recommendedOutputSize(center, 256));
     assert.ok(tileCoverage(footprint).tiles.length <= 25);
   }
 });
@@ -34,15 +34,15 @@ test('rejects invalid coordinates and footprints spanning the date line', () => 
   }
 });
 
-test('supports a custom square ground range and output raster size', () => {
-  const footprint = createFootprint([121.4737, 31.2304], { sizeMeters: 400, outputSize: 800 });
+test('derives the raster size from the source resolution and ground range', () => {
+  const footprint = createFootprint([121.4737, 31.2304], { sizeMeters: 400 });
   assert.equal(footprint.sizeMeters, 400);
-  assert.equal(footprint.outputSize, 800);
+  assert.equal(footprint.outputSize, recommendedOutputSize([121.4737, 31.2304], 400));
   const ring = footprint.geometry.coordinates[0];
   assert.ok(Math.abs(getDistance(ring[0], ring[1]) - 400) < 1.5);
 });
 
-test('rejects impractical custom capture specifications', () => {
-  assert.throws(() => createFootprint([121.47, 31.23], { sizeMeters: 16, outputSize: 512 }), /范围/);
-  assert.throws(() => createFootprint([121.47, 31.23], { sizeMeters: 256, outputSize: 48 }), /像素/);
+test('rejects impractical capture specifications', () => {
+  assert.throws(() => createFootprint([121.47, 31.23], { sizeMeters: 16 }), /范围/);
+  assert.throws(() => createFootprint([121.47, 31.23], { sizeMeters: 256, outputSize: 4096 }), /像素/);
 });

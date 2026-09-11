@@ -66,30 +66,26 @@ export default async function handler(request, response) {
     });
     const payload = await upstream.json().catch(() => ({}));
     if (!upstream.ok)
-      return response
-        .status(upstream.status)
-        .json({
-          code: upstream.status,
-          error: payload.error?.message || payload.message || 'Agnes 服务请求失败',
-        });
-    const result = jsonFromModel(payload.choices?.[0]?.message?.content);
-    return response
-      .status(200)
-      .json({
-        code: 0,
-        message: 'success',
-        request_id: payload.id || `agnes_${Date.now()}`,
-        data: {
-          task_type: 'comprehensive',
-          result_format: 'json',
-          result: {
-            change: result,
-            summary: result.description || '',
-            findings: result.findings || [],
-          },
-          meta: { model_version: payload.model || 'agnes-2.5-flash', provider: 'Agnes' },
-        },
+      return response.status(upstream.status).json({
+        code: upstream.status,
+        error: payload.error?.message || payload.message || 'Agnes 服务请求失败',
       });
+    const result = jsonFromModel(payload.choices?.[0]?.message?.content);
+    return response.status(200).json({
+      code: 0,
+      message: 'success',
+      request_id: payload.id || `agnes_${Date.now()}`,
+      data: {
+        task_type: 'comprehensive',
+        result_format: 'json',
+        result: {
+          change: result,
+          summary: result.description || '',
+          findings: result.findings || [],
+        },
+        meta: { model_version: payload.model || 'agnes-2.5-flash', provider: 'Agnes' },
+      },
+    });
   } catch (error) {
     return response.status(502).json({ code: 502, error: error.message || 'Agnes 服务不可用' });
   }

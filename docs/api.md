@@ -9,14 +9,13 @@ const api = window.terrachron;
 const region = await api.createRegion({
   center: [121.4737, 31.2304],
   sizeMeters: 400,
-  outputSize: 800,
 });
 if (region.latest.status !== 'ready') throw new Error(region.latest.error);
 const current = await api.getImageAsset({ regionId: region.id });
 // current.blob: image/png Blob；current.url: 仅此页面有效的预览 URL。
 ```
 
-`center` 是 `[经度, 纬度]`，WGS84。`sizeMeters` 与 `outputSize` 均为正方形边长；默认 256 m 与 512 px，可分别设置为 32–2048 m、64–2048 px 的整数。每像素地面面积为 `(sizeMeters / outputSize)²` m²。`createRegion` 返回区域状态，包括 id、名称、颜色、中心、GeoJSON 边界、投影、范围、最新截取和历史状态。创建时坐标非法会抛错，网络截取错误记录在 `latest.status/error`，便于保留区域重试。
+`center` 是 `[经度, 纬度]`，WGS84。`sizeMeters` 是正方形边长，可设为 32–2048 m 的整数。`outputSize` 不再由调用方或界面设置：系统使用 Esri World Imagery 第 19 级瓦片的标称地面采样距离，按中心纬度和地面范围自动计算正方形输出像素，并限制在 2048 px 内。`region.outputSize` 和 `sizeMeters / outputSize` 分别给出实际输出像素与标称 m/px；每像素地面面积为 `(sizeMeters / outputSize)²` m²。`createRegion` 返回区域状态，包括 id、名称、颜色、中心、GeoJSON 边界、投影、范围、最新截取和历史状态。创建时坐标非法会抛错，网络截取错误记录在 `latest.status/error`，便于保留区域重试。
 
 `await api.refreshLatest(regionId)` 重试或刷新当前截取，历史结果不变。`api.cancel(regionId, 'latest')` 取消截取。
 
@@ -37,7 +36,7 @@ const closest = history.closest;
 
 ## Agnes 模型模拟接口
 
-默认模型入口是同源 `POST /api/agnes`。它只在 Vercel 服务端读取 `AGNES_API_KEY`，浏览器请求体包含带身份的 base64 历史 PNG 与最新 PNG、最新 POI、影像元数据和用户编辑的提示词。代理调用 Agnes 的 OpenAI 兼容 `/v1/chat/completions`，并将模型回答适配为原有 `analysis.result`。
+默认模型入口是同源 `POST /api/agnes`。它只在 Vercel 服务端读取 `AGNES_API_KEY`，浏览器请求体包含带身份的历史与最新影像、最新 POI、影像元数据和用户编辑的提示词。为让双图请求稳定通过服务端函数，浏览器在传输时将两张影像各自压缩为最长边不超过 1024 px 的 JPEG 副本；区域库、导出包和本地模型接口仍使用原始 PNG。代理调用 Agnes 2.5 的 OpenAI 兼容 `/v1/chat/completions`，并将模型回答适配为原有 `analysis.result`。
 
 ```js
 await window.terrachron.analyzeChange({

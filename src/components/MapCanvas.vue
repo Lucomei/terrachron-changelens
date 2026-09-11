@@ -37,7 +37,7 @@ function draw() {
   try {
     if (!draftIsCaptured || store.pickMode)
       regions.push({
-        ...createFootprint(store.draftCenter, store.draftSpec),
+        ...createFootprint(store.draftCenter, { sizeMeters: store.draftSpec.sizeMeters }),
         id: 'draft',
         name: store.draftSpec.sizeMeters + ' × ' + store.draftSpec.sizeMeters + ' m',
         color: '#ffffff',
